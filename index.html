@@ -1,377 +1,361 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>VocalVista — Your Voice, Our Vision</title>
-<meta name="description" content="VocalVista — professional digital & creative services: music production, video editing, thumbnails, logos, voice overs and AI content." />
-<meta property="og:title" content="VocalVista — Your Voice, Our Vision" />
-<meta property="og:description" content="Premium creative studio for creators, brands and artists." />
-<meta property="og:type" content="website" />
-<link rel="icon" href="logo.png" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>VocalVista | Professional Digital & Creative Services</title>
+
+<meta name="description"
+content="VocalVista provides Singing, Music Production, Video Editing, PPT Making, AI Content Creation, Logo Design, Thumbnail Design, Voice Over and more.">
+
+<meta name="keywords"
+content="VocalVista, Video Editing, Music Production, Thumbnail Design, PPT Making, Logo Design">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#07070d;
-    --fg:#f5f5fb;
-    --muted:#a4a4b8;
-    --blue:#3b82f6;
-    --purple:#a855f7;
-    --pink:#ec4899;
-    --brand: linear-gradient(135deg,#3b82f6 0%,#a855f7 50%,#ec4899 100%);
-    --hero: radial-gradient(1000px 600px at 20% 10%, rgba(59,130,246,.25), transparent 60%),
-            radial-gradient(900px 500px at 80% 20%, rgba(168,85,247,.28), transparent 60%),
-            radial-gradient(700px 400px at 50% 90%, rgba(236,72,153,.20), transparent 60%);
-    --glass-bg: rgba(255,255,255,.05);
-    --glass-br: rgba(255,255,255,.12);
-    --glow: 0 20px 60px -20px rgba(168,85,247,.55);
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
-  body{
-    background:
-      radial-gradient(1200px 700px at 10% -10%, rgba(59,130,246,.18), transparent 60%),
-      radial-gradient(1000px 700px at 100% 10%, rgba(168,85,247,.18), transparent 60%),
-      var(--bg);
-    min-height:100vh;
-  }
-  a{color:inherit;text-decoration:none}
-  img{max-width:100%;display:block}
-  .container{max-width:1200px;margin:0 auto;padding:0 20px}
-  .glass{background:var(--glass-bg);border:1px solid var(--glass-br);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:20px}
-  .gradient-text{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:999px;font-weight:600;font-size:14px;cursor:pointer;border:0;transition:transform .2s, box-shadow .3s}
-  .btn-neon{background:var(--brand);color:#fff;box-shadow:0 10px 30px -10px rgba(168,85,247,.7)}
-  .btn-neon:hover{transform:translateY(-2px);box-shadow:0 20px 40px -10px rgba(168,85,247,.9)}
-  .btn-ghost{background:transparent;color:var(--fg);border:1px solid var(--glass-br)}
-  .btn-ghost:hover{background:rgba(255,255,255,.06)}
 
-  /* Nav */
-  header{position:fixed;inset:0 0 auto 0;z-index:50;padding:16px 0;transition:padding .3s}
-  header.scrolled{padding:8px 0}
-  .nav{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700}
-  .brand img{width:40px;height:40px;object-fit:contain}
-  .nav-links{display:flex;gap:4px}
-  .nav-links a{padding:8px 14px;border-radius:10px;color:var(--muted);font-size:14px;transition:.2s}
-  .nav-links a:hover{color:var(--fg);background:rgba(255,255,255,.05)}
-  .menu-btn{display:none;background:transparent;border:0;color:var(--fg);cursor:pointer;padding:8px}
-  #mobile-menu{display:none;margin-top:8px;padding:12px}
-  #mobile-menu a{display:block;padding:12px;color:var(--muted);border-radius:10px}
-  #mobile-menu a:hover{color:var(--fg);background:rgba(255,255,255,.05)}
-  @media (max-width:960px){
-    .nav-links,.nav .btn{display:none}
-    .menu-btn{display:inline-flex}
-  }
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  /* Hero */
-  .hero{position:relative;padding:180px 0 100px;text-align:center;overflow:hidden}
-  .hero::before{content:"";position:absolute;inset:0;background:var(--hero);z-index:-1}
-  .hero img.logo{width:140px;height:140px;object-fit:contain;margin:0 auto 24px;animation:float 6s ease-in-out infinite}
-  .badge{display:inline-block;padding:6px 16px;border-radius:999px;font-size:12px;color:var(--muted);background:var(--glass-bg);border:1px solid var(--glass-br);margin-bottom:20px}
-  .hero h1{font-size:clamp(36px,6vw,72px);line-height:1.05;margin:0 0 20px;font-weight:700}
-  .hero p{max-width:640px;margin:0 auto 32px;color:var(--muted);font-size:18px}
-  .hero .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-  /* Sections */
-  section{padding:100px 0}
-  .sec-head{text-align:center;max-width:640px;margin:0 auto 56px}
-  .sec-head .eyebrow{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--pink);font-weight:600}
-  .sec-head h2{font-size:clamp(30px,4vw,48px);margin:12px 0;font-weight:700}
-  .sec-head p{color:var(--muted);margin:0}
+<link rel="stylesheet" href="style.css">
 
-  /* About */
-  .about-card{max-width:820px;margin:0 auto;padding:40px;text-align:center}
-  .about-card p{color:var(--muted);font-size:17px;line-height:1.7;margin:0}
-  .about-card .accent{color:var(--fg)}
-
-  /* Services grid */
-  .grid{display:grid;gap:20px}
-  .services-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
-  .service{padding:24px;transition:transform .3s, box-shadow .3s;position:relative;overflow:hidden}
-  .service:hover{transform:translateY(-4px);box-shadow:var(--glow)}
-  .icon-box{width:48px;height:48px;border-radius:12px;background:var(--brand);display:grid;place-items:center;margin-bottom:16px;color:#fff}
-  .service h3{margin:0 0 8px;font-size:17px}
-  .service p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
-
-  /* Portfolio */
-  .portfolio-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-  .work{overflow:hidden;transition:transform .3s}
-  .work:hover{transform:translateY(-4px)}
-  .work .thumb{position:relative;aspect-ratio:4/3;overflow:hidden}
-  .work img{width:100%;height:100%;object-fit:cover;transition:transform .7s}
-  .work:hover img{transform:scale(1.1)}
-  .work .tag{position:absolute;top:12px;left:12px;padding:4px 12px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;backdrop-filter:blur(6px)}
-  .work .body{padding:18px}
-  .work h3{margin:0 0 6px;font-size:16px}
-  .work p{margin:0;color:var(--muted);font-size:14px}
-
-  /* Coupons */
-  .coupon-wrap{max-width:640px;margin:0 auto;padding:32px}
-  .coupon-form{display:flex;gap:10px;flex-wrap:wrap}
-  .coupon-form input{flex:1;min-width:220px;padding:14px 20px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--glass-br);color:var(--fg);font-size:14px;outline:none;transition:.2s;font-family:inherit}
-  .coupon-form input:focus{border-color:var(--purple);box-shadow:0 0 0 4px rgba(168,85,247,.2)}
-  #coupon-status{margin-top:16px;padding:12px 16px;border-radius:12px;font-size:14px;display:none}
-  #coupon-status.ok{display:block;background:rgba(16,185,129,.1);color:#6ee7b7;border:1px solid rgba(16,185,129,.3)}
-  #coupon-status.err{display:block;background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
-  .hint{margin-top:20px;font-size:12px;color:var(--muted)}
-  .hint button{background:none;border:0;color:var(--fg);text-decoration:underline;cursor:pointer;font:inherit;padding:0 4px}
-
-  /* Contact */
-  .contact-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-  .contact{display:flex;align-items:center;gap:16px;padding:20px;transition:transform .3s, box-shadow .3s}
-  .contact:hover{transform:translateY(-4px);box-shadow:var(--glow)}
-  .contact .label{font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted)}
-  .contact .val{font-size:14px;font-weight:600;margin-top:2px}
-
-  /* Footer */
-  footer{padding:32px 0;border-top:1px solid var(--glass-br)}
-  .foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
-  .foot .brand img{width:28px;height:28px}
-  .foot p{margin:0;color:var(--muted);font-size:12px}
-
-  /* Reveal */
-  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s, transform .7s}
-  .reveal.in{opacity:1;transform:none}
-
-  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-</style>
 </head>
+
 <body>
 
-<header id="header">
-  <div class="container">
-    <div class="nav glass">
-      <a href="#home" class="brand">
-        <img src="logo.png" alt="VocalVista logo" />
-        <span class="gradient-text">VocalVista</span>
-      </a>
-      <nav class="nav-links">
-        <a href="#home">Home</a>
-        <a href="#about">About</a>
-        <a href="#services">Services</a>
-        <a href="#portfolio">Portfolio</a>
-        <a href="#coupons">Coupon Codes</a>
-        <a href="#contact">Contact</a>
-      </nav>
-      <a href="#contact" class="btn btn-neon">Hire Us →</a>
-      <button class="menu-btn" id="menu-btn" aria-label="Toggle menu">☰</button>
-    </div>
-    <div id="mobile-menu" class="glass">
-      <a href="#home">Home</a>
-      <a href="#about">About</a>
-      <a href="#services">Services</a>
-      <a href="#portfolio">Portfolio</a>
-      <a href="#coupons">Coupon Codes</a>
-      <a href="#contact">Contact</a>
-    </div>
-  </div>
+<!-- ================= NAVBAR ================= -->
+
+<header>
+
+<div class="logo">
+
+<img src="images/logo.png" alt="VocalVista Logo">
+
+<span>VocalVista</span>
+
+</div>
+
+<nav>
+
+<ul>
+
+<li><a href="#home">Home</a></li>
+
+<li><a href="#about">About</a></li>
+
+<li><a href="#services">Services</a></li>
+
+<li><a href="#portfolio">Portfolio</a></li>
+
+<li><a href="#coupon">Coupon Codes</a></li>
+
+<li><a href="#contact">Contact</a></li>
+
+</ul>
+
+</nav>
+
+<div class="menu-btn">
+
+<i class="fa-solid fa-bars"></i>
+
+</div>
+
 </header>
 
-<!-- Hero -->
+<!-- ================= HERO ================= -->
+
 <section class="hero" id="home">
-  <div class="container">
-    <img class="logo" src="logo.png" alt="VocalVista" />
-    <div class="badge">✨ Your Voice, Our Vision</div>
-    <h1>Welcome to <span class="gradient-text">VocalVista</span></h1>
-    <p>Professional Digital &amp; Creative Services — crafted for creators, brands and dreamers who want to sound and look extraordinary.</p>
-    <div class="actions">
-      <a href="#services" class="btn btn-neon">Get Started →</a>
-      <a href="#contact" class="btn btn-ghost">Contact Us</a>
-    </div>
-  </div>
+
+<div class="hero-content">
+
+<img src="images/logo.png"
+class="hero-logo"
+alt="VocalVista">
+
+<h1>Welcome to VocalVista</h1>
+
+<p>Professional Digital & Creative Services</p>
+
+<div class="hero-buttons">
+
+<a href="#services" class="btn">
+Get Started
+</a>
+
+<a href="#contact" class="btn btn2">
+Contact Us
+</a>
+
+</div>
+
+</div>
+
+<div class="hero-glow"></div>
+
 </section>
 
-<!-- About -->
-<section id="about">
-  <div class="container">
-    <div class="sec-head reveal">
-      <div class="eyebrow">About</div>
-      <h2 class="gradient-text">Creativity engineered for impact</h2>
-    </div>
-    <div class="glass about-card reveal">
-      <p>VocalVista is a modern creative studio delivering high-quality digital services for
-        <span class="accent">students, creators, YouTubers, businesses and artists</span>.
-        From studio-grade music production and cinematic video editing to standout thumbnails,
-        logos and AI-powered content, we combine craft, technology and taste to help your work
-        look, sound and perform its very best.</p>
-    </div>
-  </div>
+<!-- ================= ABOUT ================= -->
+
+<section class="about reveal" id="about">
+
+<h2>About VocalVista</h2>
+
+<p>
+
+VocalVista is a modern creative digital agency dedicated to delivering high-quality services for students, content creators, YouTubers, businesses, musicians, and artists. We combine creativity with technology to provide professional music production, video editing, AI content creation, branding, presentations, voice-over services, and digital design solutions that help our clients stand out in today's competitive world.
+
+</p>
+
 </section>
 
-<!-- Services -->
-<section id="services">
-  <div class="container">
-    <div class="sec-head reveal">
-      <div class="eyebrow">Services</div>
-      <h2 class="gradient-text">What we craft</h2>
-      <p>Ten specialist services under one roof — pick one or combine them into a full production package.</p>
-    </div>
-    <div class="grid services-grid" id="services-grid"></div>
-  </div>
+<!-- ================= SERVICES ================= -->
+
+<section class="services reveal" id="services">
+
+<h2>Our Services</h2>
+
+<div class="service-grid">
+
+<div class="card">
+
+<i class="fa-solid fa-microphone"></i>
+
+<h3>Singing</h3>
+
+<p>Professional vocals and recordings.</p>
+
+</div>
+
+<div class="card">
+
+<i class="fa-solid fa-music"></i>
+
+<h3>Music Production</h3>
+
+<p>Modern music creation and mixing.</p>
+
+</div>
+
+<div class="card">
+
+<i class="fa-solid fa-headphones"></i>
+
+<h3>Audio Editing</h3>
+
+<p>Crystal clear professional audio.</p>
+
+</div>
+
+<div class="card">
+
+<i class="fa-solid fa-compact-disc"></i>
+
+<h3>Remix Production</h3>
+
+<p>Creative remix creation.</p>
+
+</div>
+
+<div class="card">
+
+<i class="fa-solid fa-video"></i>
+
+<h3>Video Editing</h3>
+
+<p>Professional cinematic editing.</p>
+
+</div>
+
+<div class="card">
+
+<i class="fa-solid fa-chart-column"></i>
+
+<h3>PPT Making</h3>
+
+<p>Beautiful PowerPoint presentations.</p>
+
+</div>
+
+<div class="card">
+
+<i class="fa-solid fa-image"></i>
+
+<h3>Thumbnail Design</h3>
+
+<p>High CTR YouTube thumbnails.</p>
+
+</div>
+
+<div class="card">
+
+<i class="fa-solid fa-pen-ruler"></i>
+
+<h3>Logo Design</h3>
+
+<p>Modern branding solutions.</p>
+
+</div>
+
+<div class="card">
+
+<i class="fa-solid fa-microphone-lines"></i>
+
+<h3>Voice Over</h3>
+
+<p>Professional voice recordings.</p>
+
+</div>
+
+<div class="card">
+
+<i class="fa-solid fa-robot"></i>
+
+<h3>AI Content Creation</h3>
+
+<p>Creative AI powered content.</p>
+
+</div>
+
+</div>
+
 </section>
 
-<!-- Portfolio -->
-<section id="portfolio">
-  <div class="container">
-    <div class="sec-head reveal">
-      <div class="eyebrow">Portfolio</div>
-      <h2 class="gradient-text">Selected work</h2>
-      <p>A glimpse of the projects we've helped bring to life.</p>
-    </div>
-    <div class="grid portfolio-grid" id="portfolio-grid"></div>
-  </div>
+<!-- ================= PORTFOLIO ================= -->
+
+<section class="portfolio reveal"
+id="portfolio">
+
+<h2>Our Portfolio</h2>
+
+<div class="portfolio-grid">
+
+<div class="project">
+
+<img src="images/project1.jpg">
+
+<h3>Music Project</h3>
+
+<p>Professional music production for creators.</p>
+
+</div>
+
+<div class="project">
+
+<img src="images/project2.jpg">
+
+<h3>Video Editing</h3>
+
+<p>Modern cinematic editing for YouTube.</p>
+
+</div>
+
+<div class="project">
+
+<img src="images/project3.jpg">
+
+<h3>Logo Design</h3>
+
+<p>Premium branding solutions.</p>
+
+</div>
+
+</div>
+
 </section>
 
-<!-- Coupons -->
-<section id="coupons">
-  <div class="container">
-    <div class="sec-head reveal">
-      <div class="eyebrow">Coupon Codes</div>
-      <h2 class="gradient-text">Save on your next project</h2>
-      <p>Have a promo code? Apply it below to unlock your discount.</p>
-    </div>
-    <div class="glass coupon-wrap reveal">
-      <form class="coupon-form" id="coupon-form">
-        <input type="text" id="coupon-input" placeholder="Enter coupon code (e.g. VOCAL10)" aria-label="Coupon code" />
-        <button type="submit" class="btn btn-neon">Apply Coupon →</button>
-      </form>
-      <div id="coupon-status" role="status"></div>
-      <p class="hint">Try one of: <span id="coupon-hints"></span></p>
-    </div>
-  </div>
+<!-- ================= COUPON ================= -->
+
+<section class="coupon reveal"
+id="coupon">
+
+<h2>Coupon Codes</h2>
+
+<input
+type="text"
+id="couponInput"
+placeholder="Enter Coupon Code">
+
+<button onclick="applyCoupon()">
+
+Apply Coupon
+
+</button>
+
+<p id="couponMessage"></p>
+
 </section>
 
-<!-- Contact -->
-<section id="contact">
-  <div class="container">
-    <div class="sec-head reveal">
-      <div class="eyebrow">Contact</div>
-      <h2 class="gradient-text">Let's create together</h2>
-      <p>Reach out through any of these channels — we usually reply within a few hours.</p>
-    </div>
-    <div class="grid contact-grid" id="contact-grid"></div>
-  </div>
+<!-- ================= CONTACT ================= -->
+
+<section class="contact reveal"
+id="contact">
+
+<h2>Contact Us</h2>
+
+<div class="contact-grid">
+
+<div>
+
+<i class="fa-solid fa-phone"></i>
+
+<span>+91 6239191622</span>
+
+</div>
+
+<div>
+
+<i class="fa-solid fa-envelope"></i>
+
+<span>Email Here</span>
+
+</div>
+
+<div>
+
+<i class="fa-brands fa-whatsapp"></i>
+
+<span>WhatsApp Here</span>
+
+</div>
+
+<div>
+
+<i class="fa-brands fa-youtube"></i>
+
+<span>YouTube Here</span>
+
+</div>
+
+<div>
+
+<i class="fa-brands fa-instagram"></i>
+
+<span>Instagram Here</span>
+
+</div>
+
+</div>
+
 </section>
+
+<!-- ================= FOOTER ================= -->
 
 <footer>
-  <div class="container foot">
-    <div class="brand">
-      <img src="logo.png" alt="" />
-      <span class="gradient-text">VocalVista</span>
-    </div>
-    <p>© 2026 VocalVista. All Rights Reserved.</p>
-  </div>
+
+<p>
+
+© 2026 VocalVista.
+All Rights Reserved.
+
+</p>
+
 </footer>
 
-<script>
-  // ---- Data ----
-  const SERVICES = [
-    ["🎤","Singing","Studio-grade vocal performance and covers with pro polish."],
-    ["🎵","Music Production","Original tracks, beats and arrangements across genres."],
-    ["🎧","Audio Editing","Clean mixing, mastering and podcast-ready sound."],
-    ["💿","Remix Production","Fresh remixes that reimagine your favourite tracks."],
-    ["🎬","Video Editing","Cinematic edits, reels and long-form video for creators."],
-    ["📊","PPT Making","Modern, animated presentations that command attention."],
-    ["🖼️","Thumbnail Design","Scroll-stopping YouTube thumbnails that convert clicks."],
-    ["🎨","Logo Design","Distinctive brand identities with a modern edge."],
-    ["📻","Voice Over","Warm, professional voice overs for ads, videos and IVR."],
-    ["✨","AI Content Creation","AI-powered scripts, visuals and content workflows."],
-  ];
+<script src="script.js"></script>
 
-  const PORTFOLIO = [
-    ["portfolio-1.jpg","Neon Studio Sessions","Music Production","Full production for an indie EP — mixing, mastering and vocal layering."],
-    ["portfolio-2.jpg","Cinematic Reel Cut","Video Editing","High-energy YouTube reel with color grading and sound design."],
-    ["portfolio-3.jpg","Click-Magnet Thumbnails","Thumbnail Design","Series of thumbnails that doubled click-through rate."],
-    ["portfolio-4.jpg","Brand Identity System","Logo Design","Modern logo, palette and usage system for a creator label."],
-  ];
-
-  // Add or remove coupon codes here.
-  const COUPONS = {
-    "VOCAL10": "10% off any service",
-    "VISTA25": "25% off your first order",
-    "LAUNCH50": "Special launch offer — 50% off",
-  };
-
-  const CONTACTS = [
-    ["📞","Phone","+91 6239191622","tel:+916239191622"],
-    ["✉️","Email","hello@vocalvista.com","mailto:hello@vocalvista.com"],
-    ["💬","WhatsApp","Chat on WhatsApp","https://wa.me/916239191622"],
-    ["▶️","YouTube","@VocalVista","#"],
-    ["📸","Instagram","@VocalVista","#"],
-  ];
-
-  // ---- Render ----
-  const svcGrid = document.getElementById("services-grid");
-  SERVICES.forEach(([icon,title,desc])=>{
-    svcGrid.insertAdjacentHTML("beforeend", `
-      <div class="glass service reveal">
-        <div class="icon-box">${icon}</div>
-        <h3>${title}</h3>
-        <p>${desc}</p>
-      </div>`);
-  });
-
-  const pfGrid = document.getElementById("portfolio-grid");
-  PORTFOLIO.forEach(([img,title,tag,desc])=>{
-    pfGrid.insertAdjacentHTML("beforeend", `
-      <article class="glass work reveal">
-        <div class="thumb">
-          <img src="${img}" alt="${title}" loading="lazy" />
-          <span class="tag">${tag}</span>
-        </div>
-        <div class="body"><h3>${title}</h3><p>${desc}</p></div>
-      </article>`);
-  });
-
-  const ctGrid = document.getElementById("contact-grid");
-  CONTACTS.forEach(([icon,label,val,href])=>{
-    ctGrid.insertAdjacentHTML("beforeend", `
-      <a href="${href}" class="glass contact reveal">
-        <div class="icon-box">${icon}</div>
-        <div><div class="label">${label}</div><div class="val">${val}</div></div>
-      </a>`);
-  });
-
-  // Coupon hints
-  const hints = document.getElementById("coupon-hints");
-  Object.keys(COUPONS).forEach((c,i,arr)=>{
-    const b = document.createElement("button");
-    b.type="button"; b.textContent = c;
-    b.onclick = ()=>{ document.getElementById("coupon-input").value = c; };
-    hints.appendChild(b);
-    if (i < arr.length-1) hints.append(", ");
-  });
-
-  // Coupon apply
-  document.getElementById("coupon-form").addEventListener("submit", e=>{
-    e.preventDefault();
-    const code = document.getElementById("coupon-input").value.trim().toUpperCase();
-    const box = document.getElementById("coupon-status");
-    if (!code){ box.className="err"; box.textContent="Please enter a coupon code."; return; }
-    if (COUPONS[code]){ box.className="ok"; box.textContent=`Success! ${COUPONS[code]} applied.`; }
-    else { box.className="err"; box.textContent="Invalid coupon code. Please try again."; }
-  });
-
-  // Mobile menu
-  const menuBtn = document.getElementById("menu-btn");
-  const mobile = document.getElementById("mobile-menu");
-  menuBtn.addEventListener("click", ()=>{
-    mobile.style.display = mobile.style.display === "block" ? "none" : "block";
-  });
-  mobile.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>mobile.style.display="none"));
-
-  // Scroll header
-  const header = document.getElementById("header");
-  addEventListener("scroll", ()=>header.classList.toggle("scrolled", scrollY > 20), {passive:true});
-
-  // Reveal on scroll
-  const io = new IntersectionObserver((entries)=>{
-    entries.forEach(en=>{ if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
-  },{threshold:.15});
-  document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
-</script>
 </body>
 </html>

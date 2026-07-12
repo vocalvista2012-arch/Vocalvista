@@ -1,14 +1,140 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta name="google-site-verification" content="3hLIadulkeKrUTU6tFAXZ_oEHuXXIKEgA2gRyxHu4Ps" />
-    <title>VocalVista</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VocalVista</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#111;
+color:white;
+}
+
+nav{
+background:#6A00FF;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.logo{
+font-size:28px;
+font-weight:bold;
+}
+
+nav ul{
+display:flex;
+list-style:none;
+}
+
+nav ul li{
+margin-left:20px;
+}
+
+nav ul li a{
+color:white;
+text-decoration:none;
+font-size:18px;
+}
+
+.hero{
+text-align:center;
+padding:80px 20px;
+}
+
+.hero h1{
+font-size:55px;
+}
+
+.hero p{
+font-size:22px;
+margin-top:15px;
+}
+
+.services{
+padding:50px;
+text-align:center;
+}
+
+.cards{
+display:flex;
+justify-content:center;
+gap:20px;
+flex-wrap:wrap;
+margin-top:30px;
+}
+
+.card{
+background:#222;
+width:250px;
+padding:20px;
+border-radius:15px;
+transition:0.3s;
+}
+
+.card:hover{
+transform:scale(1.05);
+background:#6A00FF;
+}
+</style>
 </head>
+
 <body>
-<center>
-<img src="logo.png" alt="VocalVista Logo" width="250">
-<h1>VOCALVISTA</h1>
-<p>Your Voice, Our Vision</p>
-</center>
+
+<nav>
+<div class="logo">VOCALVISTA</div>
+
+<ul>
+<li><a href="#">Home</a></li>
+<li><a href="#">About</a></li>
+<li><a href="#services">Services</a></li>
+<li><a href="#">Contact</a></li>
+</ul>
+</nav>
+
+<section class="hero">
+<h1>Your Voice, Our Vision</h1>
+<p>Create • Record • Edit • Inspire</p>
+</section>
+
+<section id="services" class="services">
+
+<h2>Our Services</h2>
+
+<div class="cards">
+
+<div class="card">
+<h3>🎤 Singing</h3>
+<p>Professional Vocal Recording</p>
+</div>
+
+<div class="card">
+<h3>🎧 Music Production</h3>
+<p>Beat Making & Composition</p>
+</div>
+
+<div class="card">
+<h3>🎬 Audio Editing</h3>
+<p>Mixing & Mastering</p>
+</div>
+
+<div class="card">
+<h3>🎼 Remix</h3>
+<p>Creative Remix Production</p>
+</div>
+
+</div>
+
+</section>
+
 </body>
 </html>

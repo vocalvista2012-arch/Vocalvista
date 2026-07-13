@@ -71,7 +71,7 @@ const coupons = {
     "VOCAL20": 20,
     "STUDENT25": 25,
     "YOUTUBE30": 30,
-    "VIP50": 50
+    "Vocalvista2033": 50
 
 };
 

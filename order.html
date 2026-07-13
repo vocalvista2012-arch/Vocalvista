@@ -7,7 +7,7 @@
 <title>Order Services | VocalVista</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 
 *{
@@ -104,7 +104,25 @@ text-align:center;
 background:#111827;
 color:#94a3b8;
 }
+.home-btn{
+    position:fixed;
+    top:20px;
+    left:20px;
+    background:#8b5cf6;
+    color:white;
+    text-decoration:none;
+    padding:12px 20px;
+    border-radius:50px;
+    font-weight:600;
+    box-shadow:0 5px 15px rgba(0,0,0,.3);
+    transition:.3s;
+    z-index:1000;
+}
 
+.home-btn:hover{
+    background:#6d28d9;
+    transform:translateY(-2px);
+}
 </style>
 </head>
 
@@ -225,4 +243,7 @@ Order
 </footer>
 
 </body>
+<a href="index.html" class="home-btn">
+    <i class="fa-solid fa-arrow-left"></i> Back to Home
+</a>  
 </html>

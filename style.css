@@ -762,3 +762,45 @@ font-size:32px;
         transform:translateY(0);
     }
 }
+/* Fix VocalVista AI Chat Window */
+#vv-chat {
+    width: 350px;
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 15px;
+    background: #050816;
+    color: white;
+    padding: 15px;
+    position: fixed;
+    right: 20px;
+    bottom: 100px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+}
+
+/* Fix Logo */
+.vv-logo {
+    width: 45px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Header alignment */
+.vv-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Close button */
+#vv-close {
+    margin-left: auto;
+    cursor: pointer;
+    font-size: 25px;
+}
+
+/* Chat text */
+#vv-chat p {
+    font-size: 16px;
+    line-height: 1.5;
+}

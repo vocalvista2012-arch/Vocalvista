@@ -696,3 +696,23 @@ font-size:32px;
 }
 
 }
+.btn-order{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:15px 35px;
+    margin-left:15px;
+    border-radius:50px;
+    text-decoration:none;
+    font-weight:600;
+    font-size:18px;
+    color:#fff;
+    background:linear-gradient(135deg,#7c3aed,#2563eb);
+    transition:0.3s ease;
+    box-shadow:0 8px 20px rgba(124,58,237,0.4);
+}
+
+.btn-order:hover{
+    transform:translateY(-3px);
+    box-shadow:0 12px 25px rgba(124,58,237,0.5);
+}

@@ -36,9 +36,8 @@ window.location.href="dashboard.html";
 })
 
 .catch((error)=>{
-
-document.getElementById("message").innerHTML=error.message;
-
-});
-
+    console.log(error.code);
+    console.log(error.message);
+    document.getElementById("message").innerHTML =
+        error.code + "<br>" + error.message;
 });

@@ -34,10 +34,5 @@ window.location.href="dashboard.html";
 },1000);
 
 })
-
-.catch((error)=>{
-    console.log(error.code);
-    console.log(error.message);
-    document.getElementById("message").innerHTML =
-        error.code + "<br>" + error.message;
-});
+document.getElementById("message").innerHTML =
+    error.code + "<br>" + error.message;

@@ -56,18 +56,14 @@ loginBtn.addEventListener("click", () => {
 
 
     })
+.catch((error)=>{
 
+    console.log(error.code);
+    console.log(error.message);
 
-    .catch((error)=>{
+    document.getElementById("message").innerHTML =
+    "❌ " + error.code + "<br>" + error.message;
 
-        console.log(error.code);
-        console.log(error.message);
-
-
-        document.getElementById("message").innerHTML =
-        "❌ " + error.code + "<br>" + error.message;
-
-    });
-
+});
 
 });

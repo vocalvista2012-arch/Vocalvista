@@ -3,170 +3,148 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vista Coin Hunt | VocalVista</title>
-
-<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+<title>Vista Adventure</title>
 
 <style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
 body{
-    margin:0;
-    background:#0b1020;
-    overflow:hidden;
-    font-family:Arial,sans-serif;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:linear-gradient(#7dd3fc,#38bdf8,#2563eb);
+overflow:hidden;
 }
 
-#title{
-    position:absolute;
-    top:15px;
-    width:100%;
-    text-align:center;
-    color:white;
-    font-size:28px;
-    font-weight:bold;
-    z-index:10;
+#menu{
+text-align:center;
+background:rgba(255,255,255,.15);
+backdrop-filter:blur(10px);
+padding:40px;
+border-radius:20px;
+color:white;
+box-shadow:0 0 25px rgba(0,0,0,.3);
 }
 
-#back{
-    position:absolute;
-    top:15px;
-    left:15px;
-    padding:10px 20px;
-    border:none;
-    border-radius:10px;
-    background:#2563eb;
-    color:white;
-    cursor:pointer;
-    z-index:10;
+h1{
+font-size:50px;
+margin-bottom:15px;
 }
 
-canvas{
-    display:block;
-    margin:auto;
+p{
+font-size:18px;
+margin-bottom:30px;
+}
+
+button{
+padding:15px 35px;
+font-size:20px;
+border:none;
+border-radius:12px;
+cursor:pointer;
+margin:10px;
+background:#22c55e;
+color:white;
+transition:.3s;
+}
+
+button:hover{
+transform:scale(1.08);
+}
+
+#gameCanvas{
+display:none;
+background:#87ceeb;
+border:5px solid white;
 }
 </style>
 </head>
 
 <body>
 
-<button id="back" onclick="location.href='dashboard.html'">⬅ Dashboard</button>
+<div id="menu">
+<h1>🎮 Vista Adventure</h1>
 
-<div id="title">
-🎮 Vista Coin Hunt
+<p>Explore • Complete Quests • Earn Vista Points</p>
+
+<button onclick="startGame()">Play</button>
+
+<button onclick="alert('Coming Soon!')">Settings</button>
+
 </div>
+
+<canvas id="gameCanvas" width="960" height="540"></canvas>
 
 <script>
 
-const config={
-    type:Phaser.AUTO,
-    width:1000,
-    height:600,
-    backgroundColor:"#6ec6ff",
+function startGame(){
 
-    physics:{
-        default:"arcade",
-        arcade:{
-            debug:false
-        }
-    },
+document.getElementById("menu").style.display="none";
 
-    scene:{
-        preload:preload,
-        create:create,
-        update:update
-    }
-};
+const canvas=document.getElementById("gameCanvas");
+canvas.style.display="block";
 
-new Phaser.Game(config);
+const ctx=canvas.getContext("2d");
 
-let player;
-let cursors;
-let coins;
-let score=0;
-let scoreText;
+let x=100;
+let y=100;
 
-function preload(){}
+const keys={};
 
-function create(){
+document.addEventListener("keydown",e=>{
+keys[e.key]=true;
+});
 
-player=this.add.rectangle(500,300,40,40,0x2563eb);
-this.physics.add.existing(player);
+document.addEventListener("keyup",e=>{
+keys[e.key]=false;
+});
 
-player.body.setCollideWorldBounds(true);
+function game(){
 
-coins=this.physics.add.group();
+ctx.fillStyle="#87CEEB";
+ctx.fillRect(0,0,960,540);
 
-for(let i=0;i<20;i++){
+// Grass
+ctx.fillStyle="#4CAF50";
+ctx.fillRect(0,420,960,120);
 
-let coin=this.add.circle(
+// Trees
+ctx.fillStyle="#8B4513";
+ctx.fillRect(150,300,20,120);
 
-Phaser.Math.Between(40,960),
-Phaser.Math.Between(40,560),
-10,
-0xffd700
+ctx.fillStyle="green";
+ctx.beginPath();
+ctx.arc(160,270,45,0,Math.PI*2);
+ctx.fill();
 
-);
+ctx.fillStyle="#8B4513";
+ctx.fillRect(700,280,20,140);
 
-this.physics.add.existing(coin);
+ctx.fillStyle="green";
+ctx.beginPath();
+ctx.arc(710,250,50,0,Math.PI*2);
+ctx.fill();
 
-coins.add(coin);
+// Player
+ctx.fillStyle="blue";
+ctx.fillRect(x,y,30,40);
 
-}
+if(keys["ArrowUp"]||keys["w"]) y-=3;
+if(keys["ArrowDown"]||keys["s"]) y+=3;
+if(keys["ArrowLeft"]||keys["a"]) x-=3;
+if(keys["ArrowRight"]||keys["d"]) x+=3;
 
-this.physics.add.overlap(
-player,
-coins,
-collectCoin,
-null,
-this
-);
-
-scoreText=this.add.text(
-20,
-20,
-"Coins: 0",
-{
-fontSize:"28px",
-color:"#000"
-}
-);
-
-cursors=this.input.keyboard.createCursorKeys();
+requestAnimationFrame(game);
 
 }
 
-function update(){
-
-player.body.setVelocity(0);
-
-if(cursors.left.isDown)
-player.body.setVelocityX(-250);
-
-if(cursors.right.isDown)
-player.body.setVelocityX(250);
-
-if(cursors.up.isDown)
-player.body.setVelocityY(-250);
-
-if(cursors.down.isDown)
-player.body.setVelocityY(250);
-
-}
-
-function collectCoin(player,coin){
-
-coin.destroy();
-
-score++;
-
-scoreText.setText("Coins: "+score);
-
-if(score==20){
-
-alert("🏆 Congratulations!\nYou collected all Vista Coins!");
-
-location.reload();
-
-}
+game();
 
 }
 

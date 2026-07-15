@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vista Game | VocalVista</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    background:linear-gradient(135deg,#0b1020,#121b3a,#1f1147);
+    color:white;
+}
+
+header{
+    background:rgba(255,255,255,.08);
+    backdrop-filter:blur(12px);
+    padding:20px;
+    text-align:center;
+    border-bottom:1px solid rgba(255,255,255,.15);
+}
+
+header h1{
+    font-size:34px;
+}
+
+header p{
+    color:#b8c6ff;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    padding:30px;
+}
+
+.card{
+    background:rgba(255,255,255,.08);
+    backdrop-filter:blur(15px);
+    border-radius:20px;
+    padding:25px;
+    margin-bottom:25px;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+}
+
+.box{
+    background:#1a2455;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+}
+
+.box h2{
+    font-size:34px;
+    margin-top:10px;
+}
+
+button{
+    background:#4f7cff;
+    color:white;
+    border:none;
+    padding:15px 30px;
+    border-radius:12px;
+    cursor:pointer;
+    font-size:17px;
+    transition:.3s;
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+
+#gameArea{
+    margin-top:30px;
+    height:350px;
+    border-radius:20px;
+    background:#10182d;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:28px;
+    border:2px dashed #4f7cff;
+}
+
+.task{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px;
+    margin:12px 0;
+    background:#18244d;
+    border-radius:12px;
+}
+
+footer{
+    text-align:center;
+    padding:25px;
+    color:#9cb3ff;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🎮 Vista Game</h1>
+<p>Play • Complete Tasks • Earn Vista Points</p>
+</header>
+
+<div class="container">
+
+<div class="stats">
+
+<div class="box">
+<div>💎 Vista Points</div>
+<h2 id="points">0</h2>
+</div>
+
+<div class="box">
+<div>🏆 Level</div>
+<h2 id="level">1</h2>
+</div>
+
+<div class="box">
+<div>⭐ XP</div>
+<h2 id="xp">0</h2>
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Daily Tasks</h2>
+
+<div class="task">
+<span>✅ Login Today</span>
+<button onclick="reward(20)">Claim +20</button>
+</div>
+
+<div class="task">
+<span>🎵 Visit Music Services</span>
+<button onclick="reward(30)">Claim +30</button>
+</div>
+
+<div class="task">
+<span>📢 Share VocalVista</span>
+<button onclick="reward(50)">Claim +50</button>
+</div>
+
+<div class="task">
+<span>🎮 Play Mini Game</span>
+<button onclick="reward(100)">Claim +100</button>
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Mini Game</h2>
+
+<div id="gameArea">
+
+<button onclick="playGame()">Start Game</button>
+
+</div>
+
+</div>
+
+</div>
+
+<footer>
+© VocalVista • Vista Game
+</footer>
+
+<script>
+
+let points=0;
+let xp=0;
+let level=1;
+
+function reward(value){
+
+points+=value;
+xp+=value;
+
+if(xp>=200){
+level++;
+xp=0;
+alert("🎉 Level Up!");
+}
+
+update();
+
+}
+
+function update(){
+
+document.getElementById("points").innerHTML=points;
+document.getElementById("xp").innerHTML=xp;
+document.getElementById("level").innerHTML=level;
+
+}
+
+function playGame(){
+
+let score=Math.floor(Math.random()*100)+50;
+
+reward(score);
+
+document.getElementById("gameArea").innerHTML=
+"<h2>🎉 You earned "+score+" Vista Points!</h2>";
+
+setTimeout(function(){
+
+document.getElementById("gameArea").innerHTML=
+'<button onclick="playGame()">Play Again</button>';
+
+},3000);
+
+}
+
+</script>
+
+</body>
+</html>

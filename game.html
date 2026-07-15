@@ -1,154 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vista Adventure</title>
-
-<style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
-
-body{
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-background:linear-gradient(#7dd3fc,#38bdf8,#2563eb);
-overflow:hidden;
-}
-
-#menu{
-text-align:center;
-background:rgba(255,255,255,.15);
-backdrop-filter:blur(10px);
-padding:40px;
-border-radius:20px;
-color:white;
-box-shadow:0 0 25px rgba(0,0,0,.3);
-}
-
-h1{
-font-size:50px;
-margin-bottom:15px;
-}
-
-p{
-font-size:18px;
-margin-bottom:30px;
-}
-
-button{
-padding:15px 35px;
-font-size:20px;
-border:none;
-border-radius:12px;
-cursor:pointer;
-margin:10px;
-background:#22c55e;
-color:white;
-transition:.3s;
-}
-
-button:hover{
-transform:scale(1.08);
-}
-
-#gameCanvas{
-display:none;
-background:#87ceeb;
-border:5px solid white;
-}
-</style>
+	<meta charset="utf-8" />
+	<!-- keep the line below for OpenProcessing compatibility -->
+	<script src="https://openprocessing.org/openprocessing_sketch.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/addons/p5.sound.min.js"></script>
+	<script src="mySketch.js"></script>
+	<link rel="stylesheet" type="text/css" href="style.css">
 </head>
+	<!DOCTYPE html> <html> <head> <meta charset="UTF-8" /> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" /> <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mamayaya1/game@f3a882424a8f28d07bdf456b251d889725c4c1e4/projects/among-us/style.css" /> </head> <body> <script> window.addEventListener("keydown", function(e) { if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) { e.preventDefault(); } }, false); </script> <noscript> <div id="notSupportedWrap"> <h2 id="notSupportedTitle">This content requires JavaScript</h2> <p class="notSupportedMessage">JavaScript appears to be disabled. Please enable it to view this content. Thanks! :)</p> </div> </noscript> <script src="https://cdn.jsdelivr.net/gh/mamayaya1/game@f3a882424a8f28d07bdf456b251d889725c4c1e4/projects/among-us/scripts/supportcheck.js"></script> <script src="https://cdn.jsdelivr.net/gh/mamayaya1/game@f3a882424a8f28d07bdf456b251d889725c4c1e4/projects/among-us/scripts/offlineclient.js" type="module"></script> <script src="https://cdn.jsdelivr.net/gh/gahaden/ags@4f1a2b8755bcbf67ba043a7eca6c2e05d0b5bfe5/main.js" type="module"></script> <script src="https://cdn.jsdelivr.net/gh/mamayaya1/game@f3a882424a8f28d07bdf456b251d889725c4c1e4/projects/among-us/scripts/register-sw.js" type="module"></script> 
 
-<body>
-
-<div id="menu">
-<h1>🎮 Vista Adventure</h1>
-
-<p>Explore • Complete Quests • Earn Vista Points</p>
-
-<button onclick="startGame()">Play</button>
-
-<button onclick="alert('Coming Soon!')">Settings</button>
-
-</div>
-
-<canvas id="gameCanvas" width="960" height="540"></canvas>
-
-<script>
-
-function startGame(){
-
-document.getElementById("menu").style.display="none";
-
-const canvas=document.getElementById("gameCanvas");
-canvas.style.display="block";
-
-const ctx=canvas.getContext("2d");
-
-let x=100;
-let y=100;
-
-const keys={};
-
-document.addEventListener("keydown",e=>{
-keys[e.key]=true;
-});
-
-document.addEventListener("keyup",e=>{
-keys[e.key]=false;
-});
-
-function game(){
-
-ctx.fillStyle="#87CEEB";
-ctx.fillRect(0,0,960,540);
-
-// Grass
-ctx.fillStyle="#4CAF50";
-ctx.fillRect(0,420,960,120);
-
-// Trees
-ctx.fillStyle="#8B4513";
-ctx.fillRect(150,300,20,120);
-
-ctx.fillStyle="green";
-ctx.beginPath();
-ctx.arc(160,270,45,0,Math.PI*2);
-ctx.fill();
-
-ctx.fillStyle="#8B4513";
-ctx.fillRect(700,280,20,140);
-
-ctx.fillStyle="green";
-ctx.beginPath();
-ctx.arc(710,250,50,0,Math.PI*2);
-ctx.fill();
-
-// Player
-ctx.fillStyle="blue";
-ctx.fillRect(x,y,30,40);
-
-if(keys["ArrowUp"]||keys["w"]) y-=3;
-if(keys["ArrowDown"]||keys["s"]) y+=3;
-if(keys["ArrowLeft"]||keys["a"]) x-=3;
-if(keys["ArrowRight"]||keys["d"]) x+=3;
-
-requestAnimationFrame(game);
-
-}
-
-game();
-
-}
-
-</script>
-
+<body>   
+	
 </body>
+
 </html>

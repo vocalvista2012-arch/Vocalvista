@@ -42,48 +42,85 @@ Click the screen to play
 </script>
 
 <script type="module">
+<script type="importmap">
+{
+  "imports": {
+    "three":"https://unpkg.com/three@0.166.1/build/three.module.js"
+  }
+}
+</script>
 
+<script type="module">
 import * as THREE from "three";
 
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x87ceeb);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
 
-const camera=new THREE.PerspectiveCamera(
+const camera = new THREE.PerspectiveCamera(
 75,
 window.innerWidth/window.innerHeight,
 0.1,
 1000
 );
 
-const renderer=new THREE.WebGLRenderer({antialias:true});
+const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth,window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const light=new THREE.DirectionalLight(0xffffff,2);
-light.position.set(20,50,20);
-scene.add(light);
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff,0.8));
 
-scene.add(new THREE.AmbientLight(0xffffff,.7));
+const sun = new THREE.DirectionalLight(0xffffff,2);
+sun.position.set(20,50,20);
+scene.add(sun);
 
-const floor=new THREE.Mesh(
-new THREE.BoxGeometry(100,1,100),
-new THREE.MeshLambertMaterial({color:0x33aa33})
+// Ground
+const ground = new THREE.Mesh(
+    new THREE.BoxGeometry(100,1,100),
+    new THREE.MeshLambertMaterial({color:0x33aa33})
 );
+ground.position.y=-0.5;
+scene.add(ground);
 
-floor.position.y=-0.5;
-scene.add(floor);
-
+// Camera
 camera.position.set(0,2,5);
 
+// Keyboard
+const keys = {};
+
+document.addEventListener("keydown",(e)=>{
+    keys[e.key.toLowerCase()] = true;
+});
+
+document.addEventListener("keyup",(e)=>{
+    keys[e.key.toLowerCase()] = false;
+});
+
+// Speed
+const speed = 0.15;
+
+// Animation
 function animate(){
 
-requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
 
-renderer.render(scene,camera);
+    if(keys["w"]) camera.position.z -= speed;
+    if(keys["s"]) camera.position.z += speed;
+    if(keys["a"]) camera.position.x -= speed;
+    if(keys["d"]) camera.position.x += speed;
+
+    renderer.render(scene,camera);
 
 }
 
 animate();
+
+window.addEventListener("resize",()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+});
+</script>
 
 </script>
 

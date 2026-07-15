@@ -3,124 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VistaCraft</title>
+<title>Vista Coin Hunt | VocalVista</title>
+
+<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
 
 <style>
-html,body{
+body{
     margin:0;
+    background:#0b1020;
     overflow:hidden;
-    background:#87CEEB;
+    font-family:Arial,sans-serif;
 }
 
-#loading{
+#title{
     position:absolute;
-    top:20px;
-    left:20px;
+    top:15px;
+    width:100%;
+    text-align:center;
     color:white;
-    background:rgba(0,0,0,.5);
-    padding:10px 20px;
-    border-radius:10px;
-    font-family:Arial;
+    font-size:28px;
+    font-weight:bold;
     z-index:10;
+}
+
+#back{
+    position:absolute;
+    top:15px;
+    left:15px;
+    padding:10px 20px;
+    border:none;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+    z-index:10;
+}
+
+canvas{
+    display:block;
+    margin:auto;
 }
 </style>
 </head>
 
 <body>
 
-<div id="loading">
-🟩 VistaCraft<br>
-Click the screen to play
+<button id="back" onclick="location.href='dashboard.html'">⬅ Dashboard</button>
+
+<div id="title">
+🎮 Vista Coin Hunt
 </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three":"https://unpkg.com/three@0.166.1/build/three.module.js"
-  }
-}
-</script>
+<script>
 
-<script type="module">
-<script type="importmap">
-{
-  "imports": {
-    "three":"https://unpkg.com/three@0.166.1/build/three.module.js"
-  }
-}
-</script>
+const config={
+    type:Phaser.AUTO,
+    width:1000,
+    height:600,
+    backgroundColor:"#6ec6ff",
 
-<script type="module">
-import * as THREE from "three";
+    physics:{
+        default:"arcade",
+        arcade:{
+            debug:false
+        }
+    },
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
+    scene:{
+        preload:preload,
+        create:create,
+        update:update
+    }
+};
 
-const camera = new THREE.PerspectiveCamera(
-75,
-window.innerWidth/window.innerHeight,
-0.1,
-1000
+new Phaser.Game(config);
+
+let player;
+let cursors;
+let coins;
+let score=0;
+let scoreText;
+
+function preload(){}
+
+function create(){
+
+player=this.add.rectangle(500,300,40,40,0x2563eb);
+this.physics.add.existing(player);
+
+player.body.setCollideWorldBounds(true);
+
+coins=this.physics.add.group();
+
+for(let i=0;i<20;i++){
+
+let coin=this.add.circle(
+
+Phaser.Math.Between(40,960),
+Phaser.Math.Between(40,560),
+10,
+0xffd700
+
 );
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth,window.innerHeight);
-document.body.appendChild(renderer.domElement);
+this.physics.add.existing(coin);
 
-// Lights
-scene.add(new THREE.AmbientLight(0xffffff,0.8));
-
-const sun = new THREE.DirectionalLight(0xffffff,2);
-sun.position.set(20,50,20);
-scene.add(sun);
-
-// Ground
-const ground = new THREE.Mesh(
-    new THREE.BoxGeometry(100,1,100),
-    new THREE.MeshLambertMaterial({color:0x33aa33})
-);
-ground.position.y=-0.5;
-scene.add(ground);
-
-// Camera
-camera.position.set(0,2,5);
-
-// Keyboard
-const keys = {};
-
-document.addEventListener("keydown",(e)=>{
-    keys[e.key.toLowerCase()] = true;
-});
-
-document.addEventListener("keyup",(e)=>{
-    keys[e.key.toLowerCase()] = false;
-});
-
-// Speed
-const speed = 0.15;
-
-// Animation
-function animate(){
-
-    requestAnimationFrame(animate);
-
-    if(keys["w"]) camera.position.z -= speed;
-    if(keys["s"]) camera.position.z += speed;
-    if(keys["a"]) camera.position.x -= speed;
-    if(keys["d"]) camera.position.x += speed;
-
-    renderer.render(scene,camera);
+coins.add(coin);
 
 }
 
-animate();
+this.physics.add.overlap(
+player,
+coins,
+collectCoin,
+null,
+this
+);
 
-window.addEventListener("resize",()=>{
-    camera.aspect=window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth,window.innerHeight);
-});
-</script>
+scoreText=this.add.text(
+20,
+20,
+"Coins: 0",
+{
+fontSize:"28px",
+color:"#000"
+}
+);
+
+cursors=this.input.keyboard.createCursorKeys();
+
+}
+
+function update(){
+
+player.body.setVelocity(0);
+
+if(cursors.left.isDown)
+player.body.setVelocityX(-250);
+
+if(cursors.right.isDown)
+player.body.setVelocityX(250);
+
+if(cursors.up.isDown)
+player.body.setVelocityY(-250);
+
+if(cursors.down.isDown)
+player.body.setVelocityY(250);
+
+}
+
+function collectCoin(player,coin){
+
+coin.destroy();
+
+score++;
+
+scoreText.setText("Coins: "+score);
+
+if(score==20){
+
+alert("🏆 Congratulations!\nYou collected all Vista Coins!");
+
+location.reload();
+
+}
+
+}
 
 </script>
 

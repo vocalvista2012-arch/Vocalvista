@@ -36,6 +36,7 @@
     background:var(--panel);backdrop-filter:blur(6px);
     border:1px solid #2a3450;border-radius:10px;
     padding:10px 14px;color:var(--muted);font-size:12px;line-height:1.6;
+    max-width:260px;
   }
   #controls b{color:var(--text);}
 
@@ -45,6 +46,36 @@
     padding:8px 16px;color:var(--muted);font-size:12px;max-width:520px;text-align:center;
   }
   #banner b{color:var(--accent);}
+
+  /* ---------- mobile touch controls ---------- */
+  #joystick-zone{
+    position:absolute;left:20px;bottom:20px;width:130px;height:130px;
+    touch-action:none;z-index:20;display:none;
+  }
+  #joystick-base{
+    position:absolute;inset:0;border-radius:50%;
+    background:var(--panel);border:1px solid #2a3450;
+  }
+  #joystick-knob{
+    position:absolute;left:41px;top:41px;width:48px;height:48px;border-radius:50%;
+    background:var(--accent);opacity:0.85;box-shadow:0 0 14px rgba(94,231,196,0.55);
+    transition:transform 0.02s linear;
+  }
+  #jump-btn{
+    position:absolute;right:20px;bottom:34px;width:78px;height:78px;border-radius:50%;
+    background:var(--panel);border:1px solid #2a3450;color:var(--accent2);
+    font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;
+    display:none;align-items:center;justify-content:center;
+    z-index:20;user-select:none;touch-action:none;
+  }
+  #jump-btn.active, #joystick-zone.active #joystick-base{
+    border-color:var(--accent);
+  }
+
+  @media (hover:none) and (pointer:coarse){
+    #hud, #leaderboard{padding:8px 12px;min-width:unset;}
+    #controls{display:none;} /* replaced by on-screen sticks on touch devices */
+  }
 </style>
 </head>
 <body>
@@ -69,6 +100,13 @@
 <div id="banner">
   Open this file in <b>multiple browser tabs</b> to play as different players — they sync live over BroadcastChannel, no server required.
 </div>
+
+<!-- on-screen controls for touch devices -->
+<div id="joystick-zone">
+  <div id="joystick-base"></div>
+  <div id="joystick-knob"></div>
+</div>
+<div id="jump-btn">Jump</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -232,6 +270,102 @@ window.addEventListener('mousemove', e=>{
   }
 });
 
+// ---------- mobile touch controls (virtual joystick + look + jump) ----------
+const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const joystickZone = document.getElementById('joystick-zone');
+const joystickKnob = document.getElementById('joystick-knob');
+const jumpBtn = document.getElementById('jump-btn');
+
+// joyVec.x = strafe (-1..1), joyVec.z = forward/back (-1..1)
+const joyVec = {x:0, z:0};
+let joySprint = false;
+let joyTouchId = null;
+const JOY_RADIUS = 46; // max knob travel, px
+
+if(isTouchDevice){
+  joystickZone.style.display = 'block';
+  jumpBtn.style.display = 'flex';
+}
+
+function joyUpdateFromTouch(t){
+  const rect = joystickZone.getBoundingClientRect();
+  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  const dx = t.clientX - cx, dy = t.clientY - cy;
+  const dist = Math.hypot(dx, dy);
+  const clamped = Math.min(dist, JOY_RADIUS);
+  const ang = Math.atan2(dy, dx);
+  const kx = Math.cos(ang)*clamped, ky = Math.sin(ang)*clamped;
+  joystickKnob.style.transform = `translate(${kx}px, ${ky}px)`;
+  joyVec.x = kx / JOY_RADIUS;
+  joyVec.z = -ky / JOY_RADIUS; // dragging up = forward
+  joySprint = clamped > JOY_RADIUS * 0.85;
+}
+function joyReset(){
+  joyTouchId = null;
+  joyVec.x = 0; joyVec.z = 0; joySprint = false;
+  joystickKnob.style.transform = 'translate(0px, 0px)';
+  joystickZone.classList.remove('active');
+}
+joystickZone.addEventListener('touchstart', e=>{
+  const t = e.changedTouches[0];
+  joyTouchId = t.identifier;
+  joystickZone.classList.add('active');
+  joyUpdateFromTouch(t);
+  e.preventDefault();
+}, {passive:false});
+joystickZone.addEventListener('touchmove', e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier === joyTouchId){ joyUpdateFromTouch(t); e.preventDefault(); }
+  }
+}, {passive:false});
+joystickZone.addEventListener('touchend', e=>{
+  for(const t of e.changedTouches) if(t.identifier === joyTouchId) joyReset();
+  e.preventDefault();
+}, {passive:false});
+joystickZone.addEventListener('touchcancel', e=>{
+  for(const t of e.changedTouches) if(t.identifier === joyTouchId) joyReset();
+}, {passive:false});
+
+jumpBtn.addEventListener('touchstart', e=>{
+  keys['Space'] = true;
+  jumpBtn.classList.add('active');
+  e.preventDefault();
+}, {passive:false});
+jumpBtn.addEventListener('touchend', e=>{
+  keys['Space'] = false;
+  jumpBtn.classList.remove('active');
+  e.preventDefault();
+}, {passive:false});
+jumpBtn.addEventListener('touchcancel', e=>{
+  keys['Space'] = false;
+  jumpBtn.classList.remove('active');
+}, {passive:false});
+
+// drag-to-look: any touch that starts outside the joystick/jump controls rotates the camera
+let lookTouchId = null, lookLastX = 0;
+renderer.domElement.addEventListener('touchstart', e=>{
+  for(const t of e.changedTouches){
+    if(lookTouchId === null){
+      lookTouchId = t.identifier;
+      lookLastX = t.clientX;
+    }
+  }
+}, {passive:true});
+renderer.domElement.addEventListener('touchmove', e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier === lookTouchId){
+      me.yaw -= (t.clientX - lookLastX) * 0.006;
+      lookLastX = t.clientX;
+    }
+  }
+}, {passive:true});
+window.addEventListener('touchend', e=>{
+  for(const t of e.changedTouches) if(t.identifier === lookTouchId) lookTouchId = null;
+});
+window.addEventListener('touchcancel', e=>{
+  for(const t of e.changedTouches) if(t.identifier === lookTouchId) lookTouchId = null;
+});
+
 // ---------- remote players (multiplayer) ----------
 const remotePlayers = {}; // id -> {mesh, targetPos, targetYaw, score, lastSeen}
 let channel = null;
@@ -319,9 +453,16 @@ function updatePlayer(dt){
   if(keys['KeyS']) move.sub(forward);
   if(keys['KeyD']) move.add(right);
   if(keys['KeyA']) move.sub(right);
+
+  // virtual joystick input (mobile)
+  if(Math.abs(joyVec.x) > 0.05 || Math.abs(joyVec.z) > 0.05){
+    move.addScaledVector(forward, joyVec.z);
+    move.addScaledVector(right, joyVec.x);
+  }
+
   if(move.lengthSq()>0){
-    move.normalize();
-    const spd = keys['ShiftLeft']||keys['ShiftRight'] ? SPRINT : SPEED;
+    if(move.length() > 1) move.normalize();
+    const spd = (keys['ShiftLeft']||keys['ShiftRight']||joySprint) ? SPRINT : SPEED;
     me.pos.addScaledVector(move, spd*dt);
   }
 
@@ -408,6 +549,8 @@ updateLeaderboard();
 
 if(!mpAvailable){
   document.getElementById('banner').textContent = 'Multiplayer sync (BroadcastChannel) is not available in this browser — single-player mode only.';
+} else if(isTouchDevice){
+  document.getElementById('banner').textContent = 'Drag the left stick to move, tap Jump to jump, and drag anywhere else to look around. Open this page in another tab or device to play as a second player.';
 }
 
 // orb bob animation

@@ -43,3 +43,41 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
     });
 
 });
+import { collection, query, where, getDocs }
+from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+const user = auth.currentUser;
+
+if(user){
+
+const q = query(
+  collection(db,"orders"),
+  where("userId","==",user.uid)
+);
+
+const snapshot = await getDocs(q);
+
+ordersBox.innerHTML="";
+
+snapshot.forEach((doc)=>{
+
+let order = doc.data();
+
+ordersBox.innerHTML += `
+<div class="order-card">
+<h2>${order.service}</h2>
+
+<p>Status:
+<span>${order.status}</span>
+</p>
+
+<p>Order ID: ${doc.id}</p>
+
+<button>Leave Review</button>
+
+</div>
+`;
+
+});
+
+}

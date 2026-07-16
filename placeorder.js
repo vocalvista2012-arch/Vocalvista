@@ -9,7 +9,7 @@ const firebaseConfig = {
   projectId: "vocalvista-fb898",
   storageBucket: "vocalvista-fb898.firebasestorage.app",
   messagingSenderId: "89615036410",
-  appId: "G-W4CTRCFX44"
+  appId: "1:89615036410:web:e50666f37f7416cbc8be43"
 };
 
 const app = initializeApp(firebaseConfig);

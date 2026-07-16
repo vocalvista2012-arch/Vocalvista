@@ -1,19 +1,440 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-	<meta charset="utf-8" />
-	<!-- keep the line below for OpenProcessing compatibility -->
-	<script src="https://openprocessing.org/openprocessing_sketch.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/addons/p5.sound.min.js"></script>
-	<script src="mySketch.js"></script>
-	<link rel="stylesheet" type="text/css" href="style.css">
+<meta charset="UTF-8">
+<title>Orb Rush — 3D Multiplayer Arena</title>
+<style>
+  :root{
+    --bg:#0b0f1a;
+    --panel:#121826cc;
+    --accent:#5ee7c4;
+    --accent2:#ff8a5b;
+    --text:#e8ecf3;
+    --muted:#8b93a7;
+  }
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;}
+  #canvas-wrap{position:absolute;inset:0;}
+  canvas{display:block;}
+
+  #hud{
+    position:absolute;top:16px;left:16px;
+    background:var(--panel);backdrop-filter:blur(6px);
+    border:1px solid #2a3450;border-radius:10px;
+    padding:12px 16px;color:var(--text);
+    min-width:200px;
+  }
+  #hud h1{font-size:14px;margin:0 0 8px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;}
+  #score{font-size:28px;font-weight:700;color:var(--accent2);}
+  #leaderboard{position:absolute;top:16px;right:16px;background:var(--panel);backdrop-filter:blur(6px);
+    border:1px solid #2a3450;border-radius:10px;padding:12px 16px;color:var(--text);min-width:180px;}
+  #leaderboard h2{font-size:12px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .lb-row{display:flex;justify-content:space-between;font-size:14px;padding:3px 0;}
+  .lb-color{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;}
+
+  #controls{
+    position:absolute;bottom:16px;left:16px;
+    background:var(--panel);backdrop-filter:blur(6px);
+    border:1px solid #2a3450;border-radius:10px;
+    padding:10px 14px;color:var(--muted);font-size:12px;line-height:1.6;
+  }
+  #controls b{color:var(--text);}
+
+  #banner{
+    position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+    background:var(--panel);border:1px solid #2a3450;border-radius:10px;
+    padding:8px 16px;color:var(--muted);font-size:12px;max-width:520px;text-align:center;
+  }
+  #banner b{color:var(--accent);}
+</style>
 </head>
-	<!DOCTYPE html> <html> <head> <meta charset="UTF-8" /> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" /> <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mamayaya1/game@f3a882424a8f28d07bdf456b251d889725c4c1e4/projects/among-us/style.css" /> </head> <body> <script> window.addEventListener("keydown", function(e) { if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) { e.preventDefault(); } }, false); </script> <noscript> <div id="notSupportedWrap"> <h2 id="notSupportedTitle">This content requires JavaScript</h2> <p class="notSupportedMessage">JavaScript appears to be disabled. Please enable it to view this content. Thanks! :)</p> </div> </noscript> <script src="https://cdn.jsdelivr.net/gh/mamayaya1/game@f3a882424a8f28d07bdf456b251d889725c4c1e4/projects/among-us/scripts/supportcheck.js"></script> <script src="https://cdn.jsdelivr.net/gh/mamayaya1/game@f3a882424a8f28d07bdf456b251d889725c4c1e4/projects/among-us/scripts/offlineclient.js" type="module"></script> <script src="https://cdn.jsdelivr.net/gh/gahaden/ags@4f1a2b8755bcbf67ba043a7eca6c2e05d0b5bfe5/main.js" type="module"></script> <script src="https://cdn.jsdelivr.net/gh/mamayaya1/game@f3a882424a8f28d07bdf456b251d889725c4c1e4/projects/among-us/scripts/register-sw.js" type="module"></script> 
+<body>
+<div id="canvas-wrap"></div>
 
-<body>   
-	
+<div id="hud">
+  <h1>Orb Rush</h1>
+  <div id="score">0</div>
+  <div style="color:var(--muted);font-size:12px;">orbs collected</div>
+</div>
+
+<div id="leaderboard">
+  <h2>Players Online</h2>
+  <div id="lb-list"></div>
+</div>
+
+<div id="controls">
+  <b>WASD</b> move &nbsp; <b>SPACE</b> jump &nbsp; <b>SHIFT</b> sprint<br>
+  Collect glowing orbs to score.
+</div>
+
+<div id="banner">
+  Open this file in <b>multiple browser tabs</b> to play as different players — they sync live over BroadcastChannel, no server required.
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ---------------------------------------------------------
+   ORB RUSH — a small 3D arena game with local multiplayer.
+   Multiplayer works via the browser's BroadcastChannel API:
+   every open tab of this file broadcasts its player's
+   position/rotation/score, and listens for other tabs.
+   That means no backend server is needed to try it —
+   just open several tabs (or windows) side by side.
+--------------------------------------------------------- */
+
+// ---------- basic scene setup ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0f1a);
+scene.fog = new THREE.Fog(0x0b0f1a, 20, 70);
+
+const camera = new THREE.PerspectiveCamera(65, innerWidth/innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+
+window.addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// lighting
+const hemi = new THREE.HemisphereLight(0x7fa8ff, 0x1a1f2e, 0.7);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+sun.position.set(20, 30, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
+sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
+scene.add(sun);
+
+// ground
+const groundMat = new THREE.MeshStandardMaterial({color:0x172033, roughness:0.9});
+const ground = new THREE.Mesh(new THREE.CylinderGeometry(30,30,1,48), groundMat);
+ground.position.y = -0.5;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// ring wall (visual boundary)
+const wallGeo = new THREE.TorusGeometry(30, 0.4, 8, 64);
+const wallMat = new THREE.MeshStandardMaterial({color:0x5ee7c4, emissive:0x1c4d43, roughness:0.4});
+const wall = new THREE.Mesh(wallGeo, wallMat);
+wall.rotation.x = Math.PI/2;
+scene.add(wall);
+
+// scattered obstacle pillars
+const pillarMat = new THREE.MeshStandardMaterial({color:0x2a3450, roughness:0.8});
+const pillars = [];
+for(let i=0;i<10;i++){
+  const h = 2 + Math.random()*4;
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(1,1,h,10), pillarMat);
+  const ang = Math.random()*Math.PI*2, rad = 8 + Math.random()*18;
+  p.position.set(Math.cos(ang)*rad, h/2, Math.sin(ang)*rad);
+  p.castShadow = true; p.receiveShadow = true;
+  scene.add(p);
+  pillars.push({mesh:p, radius:1.1});
+}
+
+// ---------- orb collectibles ----------
+const ORB_COUNT = 14;
+const orbs = [];
+function spawnOrb(i){
+  const geo = new THREE.IcosahedronGeometry(0.4, 0);
+  const mat = new THREE.MeshStandardMaterial({color:0xffb35e, emissive:0xff8a2e, emissiveIntensity:0.8});
+  const mesh = new THREE.Mesh(geo, mat);
+  const ang = Math.random()*Math.PI*2, rad = Math.random()*26;
+  mesh.position.set(Math.cos(ang)*rad, 0.6, Math.sin(ang)*rad);
+  mesh.castShadow = true;
+  scene.add(mesh);
+  orbs[i] = {mesh, alive:true, id:'orb'+i};
+}
+for(let i=0;i<ORB_COUNT;i++) spawnOrb(i);
+
+// ---------- player factory ----------
+function makePlayerMesh(color){
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({color, roughness:0.5});
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.9, 12), mat);
+  torso.position.y = 0.95;
+  torso.castShadow = true;
+  group.add(torso);
+  const topCap = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), mat);
+  topCap.position.y = 1.4;
+  topCap.castShadow = true;
+  group.add(topCap);
+  const botCap = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), mat);
+  botCap.position.y = 0.5;
+  botCap.castShadow = true;
+  group.add(botCap);
+  const body = torso;
+  const nose = new THREE.Mesh(
+    new THREE.ConeGeometry(0.18, 0.4, 8),
+    new THREE.MeshStandardMaterial({color:0xffffff})
+  );
+  nose.rotation.x = Math.PI/2;
+  nose.position.set(0, 1.1, 0.55);
+  group.add(nose);
+  return group;
+}
+
+// nametag sprite
+function makeNameSprite(text, color){
+  const cvs = document.createElement('canvas');
+  cvs.width = 256; cvs.height = 64;
+  const ctx = cvs.getContext('2d');
+  ctx.fillStyle = 'rgba(10,14,24,0.7)';
+  ctx.roundRect ? ctx.roundRect(0,0,256,64,16) : ctx.rect(0,0,256,64);
+  ctx.fill();
+  ctx.font = 'bold 28px sans-serif';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 128, 32);
+  const tex = new THREE.CanvasTexture(cvs);
+  const mat = new THREE.SpriteMaterial({map:tex, depthTest:false});
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(2, 0.5, 1);
+  sprite.position.y = 2.1;
+  return sprite;
+}
+
+// ---------- local player state ----------
+const PLAYER_ID = 'p-' + Math.random().toString(36).slice(2,9);
+const COLORS = [0x5ee7c4,0xff8a5b,0xf6c453,0x8a7bff,0xff6ba8,0x4fc3f7,0xa3ff6b];
+const myColor = COLORS[Math.floor(Math.random()*COLORS.length)];
+
+const me = {
+  id: PLAYER_ID,
+  pos: new THREE.Vector3(0, 0, 0),
+  yaw: 0,
+  vy: 0,
+  onGround: true,
+  score: 0,
+  mesh: makePlayerMesh(myColor),
+  color: myColor,
+};
+me.mesh.add(makeNameSprite('You', '#'+myColor.toString(16).padStart(6,'0')));
+scene.add(me.mesh);
+
+// ---------- input ----------
+const keys = {};
+window.addEventListener('keydown', e=>keys[e.code]=true);
+window.addEventListener('keyup', e=>keys[e.code]=false);
+
+let mouseDown = false, lastX = 0;
+renderer.domElement.addEventListener('mousedown', e=>{mouseDown=true; lastX=e.clientX;});
+window.addEventListener('mouseup', ()=>mouseDown=false);
+window.addEventListener('mousemove', e=>{
+  if(mouseDown){
+    me.yaw -= (e.clientX - lastX) * 0.005;
+    lastX = e.clientX;
+  }
+});
+
+// ---------- remote players (multiplayer) ----------
+const remotePlayers = {}; // id -> {mesh, targetPos, targetYaw, score, lastSeen}
+let channel = null;
+let mpAvailable = true;
+try{
+  channel = new BroadcastChannel('orb-rush-arena');
+}catch(e){
+  mpAvailable = false;
+}
+
+function sendState(){
+  if(!channel) return;
+  channel.postMessage({
+    type:'state',
+    id: PLAYER_ID,
+    color: me.color,
+    pos: [me.pos.x, me.pos.y, me.pos.z],
+    yaw: me.yaw,
+    score: me.score,
+  });
+}
+function sendOrbTaken(orbId){
+  if(!channel) return;
+  channel.postMessage({type:'orb-taken', orbId, by: PLAYER_ID});
+}
+if(channel){
+  channel.onmessage = (ev)=>{
+    const msg = ev.data;
+    if(!msg || msg.id === PLAYER_ID && msg.type==='state') return;
+    if(msg.type === 'state'){
+      let rp = remotePlayers[msg.id];
+      if(!rp){
+        const mesh = makePlayerMesh(msg.color);
+        mesh.add(makeNameSprite('Player', '#'+msg.color.toString(16).padStart(6,'0')));
+        scene.add(mesh);
+        rp = remotePlayers[msg.id] = {
+          mesh,
+          targetPos: new THREE.Vector3(...msg.pos),
+          targetYaw: msg.yaw,
+          score: msg.score,
+        };
+      }
+      rp.targetPos.set(msg.pos[0], msg.pos[1], msg.pos[2]);
+      rp.targetYaw = msg.yaw;
+      rp.score = msg.score;
+      rp.lastSeen = performance.now();
+    } else if(msg.type === 'orb-taken'){
+      const o = orbs.find(o=>o.id===msg.orbId);
+      if(o && o.alive){
+        o.alive = false;
+        o.mesh.visible = false;
+        if(msg.by !== PLAYER_ID) updateLeaderboard(); // score updates arrive via state too
+      }
+    }
+  };
+}
+
+// drop stale remote players (tab closed) after 4s of silence
+setInterval(()=>{
+  const now = performance.now();
+  for(const id in remotePlayers){
+    if(now - (remotePlayers[id].lastSeen||0) > 4000){
+      scene.remove(remotePlayers[id].mesh);
+      delete remotePlayers[id];
+    }
+  }
+  updateLeaderboard();
+}, 1000);
+
+// broadcast own state ~15x/sec
+setInterval(sendState, 66);
+
+// ---------- movement / physics ----------
+const GRAVITY = -20;
+const SPEED = 6;
+const SPRINT = 10;
+const JUMP_V = 7.5;
+const ARENA_R = 29;
+
+function updatePlayer(dt){
+  const forward = new THREE.Vector3(Math.sin(me.yaw), 0, Math.cos(me.yaw));
+  const right = new THREE.Vector3(Math.cos(me.yaw), 0, -Math.sin(me.yaw));
+  let move = new THREE.Vector3();
+  if(keys['KeyW']) move.add(forward);
+  if(keys['KeyS']) move.sub(forward);
+  if(keys['KeyD']) move.add(right);
+  if(keys['KeyA']) move.sub(right);
+  if(move.lengthSq()>0){
+    move.normalize();
+    const spd = keys['ShiftLeft']||keys['ShiftRight'] ? SPRINT : SPEED;
+    me.pos.addScaledVector(move, spd*dt);
+  }
+
+  // jump / gravity
+  if(keys['Space'] && me.onGround){
+    me.vy = JUMP_V;
+    me.onGround = false;
+  }
+  me.vy += GRAVITY*dt;
+  me.pos.y += me.vy*dt;
+  if(me.pos.y <= 0){
+    me.pos.y = 0; me.vy = 0; me.onGround = true;
+  }
+
+  // stay inside arena
+  const dist = Math.hypot(me.pos.x, me.pos.z);
+  if(dist > ARENA_R){
+    const k = ARENA_R/dist;
+    me.pos.x *= k; me.pos.z *= k;
+  }
+
+  // pillar collision (simple push-out)
+  for(const p of pillars){
+    const dx = me.pos.x - p.mesh.position.x, dz = me.pos.z - p.mesh.position.z;
+    const d = Math.hypot(dx,dz);
+    const minD = p.radius + 0.45;
+    if(d < minD && d>0.0001){
+      const k = (minD-d)/d;
+      me.pos.x += dx*k; me.pos.z += dz*k;
+    }
+  }
+
+  me.mesh.position.copy(me.pos);
+  me.mesh.rotation.y = me.yaw;
+
+  // orb pickup
+  for(const o of orbs){
+    if(!o.alive) continue;
+    if(me.pos.distanceTo(o.mesh.position) < 1.0){
+      o.alive = false;
+      o.mesh.visible = false;
+      me.score++;
+      sendOrbTaken(o.id);
+      document.getElementById('score').textContent = me.score;
+      updateLeaderboard();
+      // respawn a fresh orb elsewhere after a delay
+      setTimeout(()=>{
+        const ang = Math.random()*Math.PI*2, rad = Math.random()*26;
+        o.mesh.position.set(Math.cos(ang)*rad, 0.6, Math.sin(ang)*rad);
+        o.mesh.visible = true;
+        o.alive = true;
+      }, 4000);
+    }
+  }
+
+  // camera follow (third person chase cam)
+  const camOffset = new THREE.Vector3(-Math.sin(me.yaw)*7, 4, -Math.cos(me.yaw)*7);
+  const desiredCamPos = me.pos.clone().add(camOffset);
+  camera.position.lerp(desiredCamPos, 0.12);
+  camera.lookAt(me.pos.clone().add(new THREE.Vector3(0,1.2,0)));
+}
+
+function updateRemotePlayers(dt){
+  for(const id in remotePlayers){
+    const rp = remotePlayers[id];
+    rp.mesh.position.lerp(rp.targetPos, 0.25);
+    rp.mesh.rotation.y += (rp.targetYaw - rp.mesh.rotation.y) * 0.25;
+  }
+}
+
+function updateLeaderboard(){
+  const list = document.getElementById('lb-list');
+  const entries = [{name:'You', score:me.score, color:me.color}];
+  for(const id in remotePlayers){
+    entries.push({name:'Player', score:remotePlayers[id].score||0, color:remotePlayers[id].mesh.children[0].material.color.getHex()});
+  }
+  entries.sort((a,b)=>b.score-a.score);
+  list.innerHTML = entries.map(e=>{
+    const hex = '#'+e.color.toString(16).padStart(6,'0');
+    return `<div class="lb-row"><span><span class="lb-color" style="background:${hex}"></span>${e.name}</span><span>${e.score}</span></div>`;
+  }).join('');
+}
+updateLeaderboard();
+
+if(!mpAvailable){
+  document.getElementById('banner').textContent = 'Multiplayer sync (BroadcastChannel) is not available in this browser — single-player mode only.';
+}
+
+// orb bob animation
+let t = 0;
+
+// ---------- main loop ----------
+let last = performance.now();
+function animate(){
+  requestAnimationFrame(animate);
+  const now = performance.now();
+  const dt = Math.min((now-last)/1000, 0.05);
+  last = now;
+  t += dt;
+
+  updatePlayer(dt);
+  updateRemotePlayers(dt);
+
+  orbs.forEach((o,i)=>{
+    if(o.alive){
+      o.mesh.position.y = 0.6 + Math.sin(t*2 + i)*0.15;
+      o.mesh.rotation.y += dt*1.5;
+    }
+  });
+
+  renderer.render(scene, camera);
+}
+animate();
+</script>
 </body>
-
 </html>

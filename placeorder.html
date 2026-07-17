@@ -45,6 +45,7 @@ button:hover{
     background:#6d28d9;
 }
 </style>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>    
 </head>
 
 <body>
@@ -71,6 +72,11 @@ button:hover{
     id="projectFile"
     accept=".jpg,.jpeg,.png,.webp,.mp4,.mov,.avi,.mkv,.zip,.rar"
     multiple>
+
+<div class="cf-turnstile"
+     data-sitekey="0x4AAAAAAD36j7xfA2rQ0_1E">
+</div>
+
 <button id="submitBtn">Submit Order</button>
 
 </div>

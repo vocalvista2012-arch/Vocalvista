@@ -1,84 +1,253 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Orders | VocalVista</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        body{
-            margin:0;
-            font-family:Arial,sans-serif;
-            background:#111827;
-            color:white;
-        }
+<title>My Orders | VocalVista</title>
 
-        header{
-            background:#1f2937;
-            padding:15px;
-            text-align:center;
-        }
+<style>
 
-        .container{
-            width:90%;
-            max-width:900px;
-            margin:30px auto;
-        }
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#0f172a;
+    color:white;
+}
 
-        .order-card{
-            background:#1e293b;
-            border-radius:12px;
-            padding:20px;
-            margin-bottom:20px;
-            border:1px solid #374151;
-        }
+header{
+    background:#1e293b;
+    padding:20px;
+    text-align:center;
+}
 
-        .status{
-            color:#22c55e;
-            font-weight:bold;
-        }
+.container{
+    width:90%;
+    max-width:900px;
+    margin:30px auto;
+}
 
-        button{
-            background:#3b82f6;
-            color:white;
-            border:none;
-            padding:10px 18px;
-            border-radius:8px;
-            cursor:pointer;
-            margin-top:10px;
-        }
 
-        button:hover{
-            background:#2563eb;
-        }
-    </style>
+.order-card{
+    background:#1e293b;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:15px;
+    border:1px solid #334155;
+}
+
+
+.status{
+    color:#22c55e;
+    font-weight:bold;
+}
+
+
+button{
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:10px 20px;
+    border-radius:8px;
+}
+
+
+.no-order{
+    text-align:center;
+    color:#94a3b8;
+    margin-top:50px;
+}
+
+</style>
+
 </head>
+
+
 <body>
 
+
 <header>
-    <h1>📦 My Orders</h1>
+<h1>📦 My Orders</h1>
 </header>
 
-<div class="container">
 
-    <div class="order-card">
-        <h2>Logo Design</h2>
+<div class="container" id="ordersBox">
 
-        <p>Status:
-            <span class="status">
-                In Progress
-            </span>
-        </p>
-
-        <p>Order ID: #1001</p>
-
-        <button disabled>
-            Leave Review
-        </button>
-
-    </div>
+<p>Loading orders...</p>
 
 </div>
+
+
+
+<script type="module">
+
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+
+
+import { getAuth,onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+
+import { getFirestore,collection,query,where,getDocs }
+from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+
+
+// 🔥 ADD YOUR FIREBASE CONFIG HERE
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyDgyxk97l7CTsmgGADDvJ8jhiN6Df7WRwQ",
+
+authDomain: "vocalvista-fb898.firebaseapp.com",
+
+projectId: "vocalvista-fb898",
+
+storageBucket: "vocalvista-fb898.firebasestorage.app",
+
+messagingSenderId: "89615036410",
+
+appId: "1:89615036410:web:e50666f37f7416cbc8be43"
+
+};
+
+
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getFirestore(app);
+
+
+
+const ordersBox = document.getElementById("ordersBox");
+
+
+
+onAuthStateChanged(auth, async(user)=>{
+
+
+if(user){
+
+
+const q = query(
+
+collection(db,"orders"),
+
+where("userId","==",user.uid)
+
+);
+
+
+
+const snapshot = await getDocs(q);
+
+
+
+ordersBox.innerHTML="";
+
+
+
+if(snapshot.empty){
+
+
+ordersBox.innerHTML = `
+
+<div class="no-order">
+
+<h2>No Orders Found</h2>
+
+<p>You have not placed any order yet.</p>
+
+</div>
+
+`;
+
+return;
+
+}
+
+
+
+
+snapshot.forEach((doc)=>{
+
+
+let order = doc.data();
+
+
+
+ordersBox.innerHTML += `
+
+
+<div class="order-card">
+
+
+<h2>🎨 ${order.service}</h2>
+
+
+<p>
+Order ID: ${doc.id}
+</p>
+
+
+<p>
+Status:
+<span class="status">
+${order.status || "Pending"}
+</span>
+</p>
+
+
+
+${order.fileURL ? 
+`
+<a href="${order.fileURL}" target="_blank">
+<button>Download File</button>
+</a>
+`
+:
+""}
+
+
+</div>
+
+
+`;
+
+
+
+});
+
+
+
+}
+else{
+
+
+ordersBox.innerHTML=`
+
+<div class="no-order">
+
+<h2>Please Login First</h2>
+
+</div>
+
+`;
+
+}
+
+
+
+});
+
+
+
+</script>
+
 
 </body>
 </html>

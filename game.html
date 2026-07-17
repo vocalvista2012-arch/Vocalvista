@@ -2,579 +2,923 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Orb Rush — 3D Multiplayer Arena</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Blockcraft — Voxel World Multiplayer</title>
 <style>
   :root{
-    --bg:#0b0f1a;
-    --panel:#121826cc;
-    --accent:#5ee7c4;
-    --accent2:#ff8a5b;
-    --text:#e8ecf3;
-    --muted:#8b93a7;
+    --panel:#1a1f2ecc; --border:#3a4668; --text:#e8ecf3; --muted:#9aa3ba;
+    --accent:#7ef2d1; --accent2:#ffcf6b;
   }
-  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;}
-  #canvas-wrap{position:absolute;inset:0;}
+  html,body{margin:0;height:100%;background:#87ceeb;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;touch-action:none;user-select:none;
+    -webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;overscroll-behavior:none;}
   canvas{display:block;}
+  button, .slot, .mbtn{touch-action:manipulation;}
 
-  #hud{
-    position:absolute;top:16px;left:16px;
-    background:var(--panel);backdrop-filter:blur(6px);
-    border:1px solid #2a3450;border-radius:10px;
-    padding:12px 16px;color:var(--text);
-    min-width:200px;
+  /* small-screen phones: shrink hotbar so 9 slots fit without overlapping the touch controls */
+  @media (max-width:600px){
+    .slot{width:34px;height:34px;}
+    .slot .swatch{width:22px;height:22px;}
+    .slot .count{font-size:9px;}
+    #hotbar{gap:3px;padding:4px;}
   }
-  #hud h1{font-size:14px;margin:0 0 8px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;}
-  #score{font-size:28px;font-weight:700;color:var(--accent2);}
-  #leaderboard{position:absolute;top:16px;right:16px;background:var(--panel);backdrop-filter:blur(6px);
-    border:1px solid #2a3450;border-radius:10px;padding:12px 16px;color:var(--text);min-width:180px;}
-  #leaderboard h2{font-size:12px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-  .lb-row{display:flex;justify-content:space-between;font-size:14px;padding:3px 0;}
-  .lb-color{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;}
+  /* layout adjustments specifically when touch controls are active */
+  body.touch-mode #status{display:none;}
+  body.touch-mode #players-panel{min-width:100px;padding:6px 10px;font-size:11px;}
+  body.touch-mode #hotbar{bottom:auto;top:76px;}
+  body.touch-mode #minv{top:16px;left:16px;right:auto;}
+  #crosshair{
+    position:absolute;top:50%;left:50%;width:18px;height:18px;margin:-9px 0 0 -9px;
+    pointer-events:none;
+  }
+  #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.85);}
+  #crosshair::before{left:8px;top:0;width:2px;height:18px;}
+  #crosshair::after{top:8px;left:0;width:18px;height:2px;}
 
-  #controls{
-    position:absolute;bottom:16px;left:16px;
-    background:var(--panel);backdrop-filter:blur(6px);
-    border:1px solid #2a3450;border-radius:10px;
-    padding:10px 14px;color:var(--muted);font-size:12px;line-height:1.6;
-    max-width:260px;
-  }
-  #controls b{color:var(--text);}
+  #damage-flash{position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 40%, #ff2b2b 100%);
+    opacity:0;pointer-events:none;transition:opacity 0.12s;z-index:15;}
+  #toast{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);
+    background:rgba(20,10,10,0.75);border:1px solid #ff5e5e;border-radius:10px;
+    padding:14px 22px;color:#ffdada;font-size:18px;font-weight:700;opacity:0;
+    transition:opacity 0.25s;pointer-events:none;z-index:16;}
 
-  #banner{
-    position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-    background:var(--panel);border:1px solid #2a3450;border-radius:10px;
-    padding:8px 16px;color:var(--muted);font-size:12px;max-width:520px;text-align:center;
-  }
-  #banner b{color:var(--accent);}
+  #hearts{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);display:flex;gap:2px;z-index:4;}
+  #hearts .heart{font-size:20px;filter:drop-shadow(0 0 2px #000);}
+  body.touch-mode #hearts{bottom:auto;top:132px;}
 
-  /* ---------- mobile touch controls ---------- */
-  #joystick-zone{
-    position:absolute;left:20px;bottom:20px;width:130px;height:130px;
-    touch-action:none;z-index:20;display:none;
+  #chat-log{
+    position:absolute;left:12px;bottom:100px;width:340px;max-height:180px;
+    display:flex;flex-direction:column;gap:3px;overflow:hidden;z-index:4;pointer-events:none;
   }
-  #joystick-base{
-    position:absolute;inset:0;border-radius:50%;
-    background:var(--panel);border:1px solid #2a3450;
+  .chat-msg{
+    background:rgba(10,14,24,0.6);border-radius:6px;padding:4px 9px;
+    color:var(--text);font-size:13px;line-height:1.35;width:fit-content;max-width:100%;
+    word-break:break-word;animation:chatFadeIn 0.15s ease-out;
   }
-  #joystick-knob{
-    position:absolute;left:41px;top:41px;width:48px;height:48px;border-radius:50%;
-    background:var(--accent);opacity:0.85;box-shadow:0 0 14px rgba(94,231,196,0.55);
-    transition:transform 0.02s linear;
+  .chat-msg b{margin-right:2px;}
+  @keyframes chatFadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  #chat-input-row{
+    position:absolute;left:12px;bottom:100px;width:340px;z-index:25;
   }
-  #jump-btn{
-    position:absolute;right:20px;bottom:34px;width:78px;height:78px;border-radius:50%;
-    background:var(--panel);border:1px solid #2a3450;color:var(--accent2);
-    font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;
-    display:none;align-items:center;justify-content:center;
-    z-index:20;user-select:none;touch-action:none;
+  #chat-input{
+    width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;
+    border:1px solid var(--accent);background:#0f1420;color:var(--text);font-size:14px;outline:none;
   }
-  #jump-btn.active, #joystick-zone.active #joystick-base{
-    border-color:var(--accent);
-  }
+  body.touch-mode #chat-log,body.touch-mode #chat-input-row{bottom:auto;top:170px;left:8px;width:min(300px,60vw);}
 
-  @media (hover:none) and (pointer:coarse){
-    #hud, #leaderboard{padding:8px 12px;min-width:unset;}
-    #controls{display:none;} /* replaced by on-screen sticks on touch devices */
+  #lock-hint{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(10,14,24,0.55);color:var(--text);font-size:20px;text-align:center;
+    flex-direction:column;gap:10px;z-index:20;cursor:pointer;
   }
+  #lock-hint span{color:var(--accent);font-weight:700;}
+  #lock-hint small{color:var(--muted);font-size:13px;max-width:420px;}
+
+  #hotbar{
+    position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+    display:flex;gap:6px;background:var(--panel);border:1px solid var(--border);
+    border-radius:10px;padding:6px;backdrop-filter:blur(6px);
+  }
+  .slot{
+    width:52px;height:52px;border-radius:6px;border:2px solid #2a3450;
+    background:#0f1420;position:relative;display:flex;align-items:center;justify-content:center;
+  }
+  .slot.selected{border-color:var(--accent);box-shadow:0 0 8px #7ef2d199;}
+  .slot .swatch{width:34px;height:34px;border-radius:4px;}
+  .slot .count{position:absolute;bottom:2px;right:4px;font-size:11px;color:var(--text);font-weight:700;text-shadow:0 0 3px #000;}
+  .slot .label{position:absolute;top:1px;left:3px;font-size:8px;color:var(--muted);}
+
+  #top-panels{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none;}
+  #status{
+    background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:8px 14px;color:var(--muted);font-size:12px;line-height:1.7;pointer-events:auto;
+  }
+  #status b{color:var(--text);}
+  #players-panel{
+    background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:8px 14px;color:var(--text);font-size:13px;min-width:150px;pointer-events:auto;
+  }
+  #players-panel h4{margin:0 0 6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .p-row{display:flex;align-items:center;gap:6px;padding:2px 0;}
+  .p-dot{width:9px;height:9px;border-radius:50%;}
+
+  #craft-overlay{
+    position:absolute;inset:0;background:rgba(6,9,16,0.72);display:none;
+    align-items:center;justify-content:center;z-index:30;
+  }
+  #craft-panel{
+    width:560px;max-width:90vw;max-height:80vh;overflow:auto;
+    background:#141a28;border:1px solid var(--border);border-radius:14px;padding:20px;color:var(--text);
+  }
+  #craft-panel h2{margin:0 0 4px;font-size:18px;color:var(--accent2);}
+  #craft-panel p.sub{margin:0 0 16px;color:var(--muted);font-size:12px;}
+  .inv-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin-bottom:18px;}
+  .inv-cell{aspect-ratio:1;border-radius:6px;background:#0f1420;border:1px solid #2a3450;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:var(--muted);position:relative;}
+  .inv-cell .swatch{width:60%;height:45%;border-radius:3px;}
+  .inv-cell .count{position:absolute;bottom:2px;right:3px;font-size:9px;color:var(--text);}
+  .recipe{
+    display:flex;align-items:center;gap:12px;background:#0f1420;border:1px solid #232c44;
+    border-radius:10px;padding:10px 12px;margin-bottom:8px;
+  }
+  .recipe .r-need{flex:1;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);}
+  .recipe .r-need span{display:flex;align-items:center;gap:4px;}
+  .recipe .r-swatch{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .recipe .r-out{font-size:12px;color:var(--text);width:110px;}
+  .recipe button{
+    background:var(--accent);border:none;border-radius:6px;padding:8px 14px;font-weight:700;
+    cursor:pointer;color:#0a1a14;
+  }
+  .recipe button:disabled{background:#2a3450;color:#5a637d;cursor:not-allowed;}
+  #craft-close{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;}
+
+  #mobile-controls{display:none;position:absolute;inset:0;pointer-events:none;z-index:5;}
+  #joystick-base{position:absolute;left:24px;bottom:calc(24px + env(safe-area-inset-bottom));width:110px;height:110px;border-radius:50%;
+    background:rgba(20,26,42,0.55);border:2px solid var(--border);pointer-events:auto;}
+  #joystick-stick{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;
+    border-radius:50%;background:radial-gradient(circle at 35% 30%,#7ef2d1,#2fae8c);}
+  .mbtn{position:absolute;right:20px;width:64px;height:64px;border-radius:50%;
+    background:rgba(20,26,42,0.6);border:2px solid var(--border);color:var(--text);
+    font-size:11px;font-weight:700;pointer-events:auto;display:flex;align-items:center;justify-content:center;}
+  #mjump{bottom:calc(180px + env(safe-area-inset-bottom));}
+  #mbreak{bottom:calc(104px + env(safe-area-inset-bottom));background:rgba(255,110,90,0.35);}
+  #mplace{bottom:calc(24px + env(safe-area-inset-bottom));background:rgba(126,242,209,0.3);}
+  #minv{top:auto;right:16px;bottom:auto;width:52px;height:52px;font-size:10px;}
+  body.touch-mode #minv{top:16px;left:16px;right:auto;}
+  #mchat{top:16px;left:78px;bottom:auto;right:auto;width:52px;height:52px;font-size:10px;background:rgba(126,242,209,0.2);}
 </style>
 </head>
 <body>
-<div id="canvas-wrap"></div>
 
-<div id="hud">
-  <h1>Orb Rush</h1>
-  <div id="score">0</div>
-  <div style="color:var(--muted);font-size:12px;">orbs collected</div>
+<div id="lock-hint">
+  <div>🧱 <span>Blockcraft</span></div>
+  <div>Click to play (mouse look locks to game)</div>
+  <small>WASD move · Space jump · Left-click break/hit · Right-click place · 1-9 hotbar · E crafting · Enter to chat</small>
 </div>
 
-<div id="leaderboard">
-  <h2>Players Online</h2>
-  <div id="lb-list"></div>
+<div id="crosshair"></div>
+<div id="damage-flash"></div>
+<div id="toast"></div>
+
+<div id="hearts"></div>
+
+<div id="chat-log"></div>
+<div id="chat-input-row" style="display:none;">
+  <input id="chat-input" maxlength="140" autocomplete="off" placeholder="Say something... (Enter to send, Esc to cancel)">
 </div>
 
-<div id="controls">
-  <b>WASD</b> move &nbsp; <b>SPACE</b> jump &nbsp; <b>SHIFT</b> sprint<br>
-  Collect glowing orbs to score.
+<div id="top-panels">
+  <div id="status">
+    <b>Blockcraft</b> — local multiplayer over BroadcastChannel<br>
+    Open this file in multiple tabs to build together in the same world.
+  </div>
+  <div id="players-panel">
+    <h4>Players</h4>
+    <div id="p-list"></div>
+  </div>
 </div>
 
-<div id="banner">
-  Open this file in <b>multiple browser tabs</b> to play as different players — they sync live over BroadcastChannel, no server required.
+<div id="hotbar"></div>
+
+<div id="craft-overlay">
+  <div id="craft-panel">
+    <button id="craft-close">✕</button>
+    <h2>Crafting Table</h2>
+    <p class="sub">Your inventory</p>
+    <div class="inv-grid" id="inv-grid"></div>
+    <p class="sub">Recipes</p>
+    <div id="recipe-list"></div>
+  </div>
 </div>
 
-<!-- on-screen controls for touch devices -->
-<div id="joystick-zone">
-  <div id="joystick-base"></div>
-  <div id="joystick-knob"></div>
+<div id="mobile-controls">
+  <div id="joystick-base"><div id="joystick-stick"></div></div>
+  <button class="mbtn" id="mjump">JUMP</button>
+  <button class="mbtn" id="mbreak">BREAK</button>
+  <button class="mbtn" id="mplace">PLACE</button>
+  <button class="mbtn" id="minv">CRAFT</button>
+  <button class="mbtn" id="mchat">CHAT</button>
 </div>
-<div id="jump-btn">Jump</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-/* ---------------------------------------------------------
-   ORB RUSH — a small 3D arena game with local multiplayer.
-   Multiplayer works via the browser's BroadcastChannel API:
-   every open tab of this file broadcasts its player's
-   position/rotation/score, and listens for other tabs.
-   That means no backend server is needed to try it —
-   just open several tabs (or windows) side by side.
---------------------------------------------------------- */
+/* =========================================================
+   BLOCKCRAFT — a compact Minecraft-style voxel game.
+   - Deterministic terrain (same seed => same world on every
+     device/tab before any edits happen)
+   - Break / place blocks with raycasting against InstancedMesh
+   - Hotbar inventory + a crafting table with real recipes
+   - Multiplayer via BroadcastChannel: player positions and
+     block edits sync live across browser tabs (no server).
+========================================================= */
 
-// ---------- basic scene setup ----------
+// ---------------- block type definitions ----------------
+const BLOCKS = {
+  grass:   {color:0x6abe4d, placeable:true},
+  dirt:    {color:0x8b5a2b, placeable:true},
+  stone:   {color:0x8d8d8d, placeable:true},
+  wood_log:{color:0x6b4423, placeable:true},
+  leaves:  {color:0x2f6b2f, placeable:true},
+  planks:  {color:0xc19a6b, placeable:true},
+  coal_ore:{color:0x33363d, placeable:true},
+  crafting_table:{color:0xa9702f, placeable:true},
+  torch:   {color:0xffcf6b, placeable:true, emissive:0xff9900, scale:[0.3,0.6,0.3], yOff:-0.2},
+};
+// non-block inventory items (crafted, no world mesh)
+const ITEMS = {
+  stick: {color:0x9c7a4d},
+  coal:  {color:0x1c1c1c},
+};
+const SWATCH = {...Object.fromEntries(Object.entries(BLOCKS).map(([k,v])=>[k,v.color])),
+                ...Object.fromEntries(Object.entries(ITEMS).map(([k,v])=>[k,v.color]))};
+
+const RECIPES = [
+  {need:[['wood_log',1]], out:['planks',4], label:'4 Planks'},
+  {need:[['planks',2]], out:['stick',4], label:'4 Sticks'},
+  {need:[['planks',4]], out:['crafting_table',1], label:'1 Crafting Table'},
+  {need:[['coal',1],['stick',1]], out:['torch',4], label:'4 Torches'},
+];
+
+// ---------------- deterministic world generation ----------------
+const SEED = 91711;
+function hash2(x,y){ let s = Math.sin(x*127.1+y*311.7+SEED)*43758.5453; return s-Math.floor(s); }
+function noise2D(x,y){
+  const xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi;
+  const sm=t=>t*t*(3-2*t);
+  const u=sm(xf), v=sm(yf);
+  const a=hash2(xi,yi), b=hash2(xi+1,yi), c=hash2(xi,yi+1), d=hash2(xi+1,yi+1);
+  return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;
+}
+function heightAt(x,z){ return 4 + Math.floor(noise2D(x*0.11, z*0.11)*7); }
+
+const WORLD_R = 16;
+const world = new Map(); // "x,y,z" -> blockType
+function key(x,y,z){ return x+','+y+','+z; }
+function getBlock(x,y,z){ return world.get(key(x,y,z)); }
+function isSolid(x,y,z){ return world.has(key(x,y,z)); }
+
+function generateWorld(){
+  for(let x=-WORLD_R;x<=WORLD_R;x++){
+    for(let z=-WORLD_R;z<=WORLD_R;z++){
+      const h = heightAt(x,z);
+      for(let y=0;y<=h;y++){
+        let t;
+        if(y===h) t='grass';
+        else if(y>=h-2) t='dirt';
+        else{
+          t = (hash2(x*13.7+1,y*7.3+z*5.1) < 0.055) ? 'coal_ore' : 'stone';
+        }
+        world.set(key(x,y,z), t);
+      }
+      // trees
+      if(hash2(x*3.1,z*7.2) < 0.035 && Math.abs(x)<WORLD_R-2 && Math.abs(z)<WORLD_R-2){
+        const th = 3+Math.floor(hash2(x*9.3,z*2.1)*2);
+        for(let i=1;i<=th;i++) world.set(key(x,h+i,z),'wood_log');
+        for(let lx=-2;lx<=2;lx++)for(let lz=-2;lz<=2;lz++)for(let ly=-1;ly<=1;ly++){
+          if(Math.abs(lx)+Math.abs(lz)+Math.abs(ly)<=3){
+            const kx=x+lx, ky=h+th+ly, kz=z+lz;
+            if(!world.has(key(kx,ky,kz))) world.set(key(kx,ky,kz),'leaves');
+          }
+        }
+      }
+    }
+  }
+}
+generateWorld();
+
+// diff log for multiplayer late-join sync: records edits since base gen
+const diffLog = []; // {x,y,z,block|null}
+
+// ---------------- scene setup ----------------
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b0f1a);
-scene.fog = new THREE.Fog(0x0b0f1a, 20, 70);
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb, 30, 90);
 
-const camera = new THREE.PerspectiveCamera(65, innerWidth/innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.05, 300);
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
-document.getElementById('canvas-wrap').appendChild(renderer.domElement);
-
+document.body.appendChild(renderer.domElement);
 window.addEventListener('resize', ()=>{
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
 
-// lighting
-const hemi = new THREE.HemisphereLight(0x7fa8ff, 0x1a1f2e, 0.7);
-scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xffffff, 1.1);
-sun.position.set(20, 30, 10);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048,2048);
-sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
-sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
+const sun = new THREE.DirectionalLight(0xffffff, 1.05);
+sun.position.set(30,50,20); sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024);
+sun.shadow.camera.left=-40; sun.shadow.camera.right=40; sun.shadow.camera.top=40; sun.shadow.camera.bottom=-40;
 scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xbfe0ff, 0x445533, 0.6));
 
-// ground
-const groundMat = new THREE.MeshStandardMaterial({color:0x172033, roughness:0.9});
-const ground = new THREE.Mesh(new THREE.CylinderGeometry(30,30,1,48), groundMat);
-ground.position.y = -0.5;
-ground.receiveShadow = true;
-scene.add(ground);
-
-// ring wall (visual boundary)
-const wallGeo = new THREE.TorusGeometry(30, 0.4, 8, 64);
-const wallMat = new THREE.MeshStandardMaterial({color:0x5ee7c4, emissive:0x1c4d43, roughness:0.4});
-const wall = new THREE.Mesh(wallGeo, wallMat);
-wall.rotation.x = Math.PI/2;
-scene.add(wall);
-
-// scattered obstacle pillars
-const pillarMat = new THREE.MeshStandardMaterial({color:0x2a3450, roughness:0.8});
-const pillars = [];
-for(let i=0;i<10;i++){
-  const h = 2 + Math.random()*4;
-  const p = new THREE.Mesh(new THREE.CylinderGeometry(1,1,h,10), pillarMat);
-  const ang = Math.random()*Math.PI*2, rad = 8 + Math.random()*18;
-  p.position.set(Math.cos(ang)*rad, h/2, Math.sin(ang)*rad);
-  p.castShadow = true; p.receiveShadow = true;
-  scene.add(p);
-  pillars.push({mesh:p, radius:1.1});
+const boxGeo = new THREE.BoxGeometry(1,1,1);
+const materials = {};
+for(const [name,def] of Object.entries(BLOCKS)){
+  materials[name] = new THREE.MeshStandardMaterial({
+    color: def.color, roughness:0.9,
+    emissive: def.emissive||0x000000, emissiveIntensity: def.emissive?0.9:0
+  });
 }
 
-// ---------- orb collectibles ----------
-const ORB_COUNT = 14;
-const orbs = [];
-function spawnOrb(i){
-  const geo = new THREE.IcosahedronGeometry(0.4, 0);
-  const mat = new THREE.MeshStandardMaterial({color:0xffb35e, emissive:0xff8a2e, emissiveIntensity:0.8});
-  const mesh = new THREE.Mesh(geo, mat);
-  const ang = Math.random()*Math.PI*2, rad = Math.random()*26;
-  mesh.position.set(Math.cos(ang)*rad, 0.6, Math.sin(ang)*rad);
-  mesh.castShadow = true;
-  scene.add(mesh);
-  orbs[i] = {mesh, alive:true, id:'orb'+i};
+let instancedMeshes = {}; // type -> THREE.InstancedMesh
+function rebuildMeshes(){
+  for(const m of Object.values(instancedMeshes)) scene.remove(m);
+  instancedMeshes = {};
+  const byType = {};
+  for(const [k,type] of world.entries()){
+    (byType[type] = byType[type]||[]).push(k);
+  }
+  for(const [type, keys] of Object.entries(byType)){
+    const def = BLOCKS[type];
+    const mesh = new THREE.InstancedMesh(boxGeo, materials[type], keys.length);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    const coords = new Array(keys.length);
+    const m4 = new THREE.Matrix4();
+    keys.forEach((k,i)=>{
+      const [x,y,z] = k.split(',').map(Number);
+      coords[i] = {x,y,z};
+      const scl = def.scale || [1,1,1];
+      const yOff = def.yOff || 0;
+      m4.compose(
+        new THREE.Vector3(x, y+yOff, z),
+        new THREE.Quaternion(),
+        new THREE.Vector3(...scl)
+      );
+      mesh.setMatrixAt(i, m4);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.userData.coords = coords;
+    mesh.userData.blockType = type;
+    scene.add(mesh);
+    instancedMeshes[type] = mesh;
+  }
 }
-for(let i=0;i<ORB_COUNT;i++) spawnOrb(i);
+rebuildMeshes();
 
-// ---------- player factory ----------
-function makePlayerMesh(color){
-  const group = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({color, roughness:0.5});
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.9, 12), mat);
-  torso.position.y = 0.95;
-  torso.castShadow = true;
-  group.add(torso);
-  const topCap = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), mat);
-  topCap.position.y = 1.4;
-  topCap.castShadow = true;
-  group.add(topCap);
-  const botCap = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), mat);
-  botCap.position.y = 0.5;
-  botCap.castShadow = true;
-  group.add(botCap);
-  const body = torso;
-  const nose = new THREE.Mesh(
-    new THREE.ConeGeometry(0.18, 0.4, 8),
-    new THREE.MeshStandardMaterial({color:0xffffff})
-  );
-  nose.rotation.x = Math.PI/2;
-  nose.position.set(0, 1.1, 0.55);
-  group.add(nose);
-  return group;
-}
-
-// nametag sprite
-function makeNameSprite(text, color){
-  const cvs = document.createElement('canvas');
-  cvs.width = 256; cvs.height = 64;
-  const ctx = cvs.getContext('2d');
-  ctx.fillStyle = 'rgba(10,14,24,0.7)';
-  ctx.roundRect ? ctx.roundRect(0,0,256,64,16) : ctx.rect(0,0,256,64);
-  ctx.fill();
-  ctx.font = 'bold 28px sans-serif';
-  ctx.fillStyle = color;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 128, 32);
-  const tex = new THREE.CanvasTexture(cvs);
-  const mat = new THREE.SpriteMaterial({map:tex, depthTest:false});
-  const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(2, 0.5, 1);
-  sprite.position.y = 2.1;
-  return sprite;
+function setBlock(x,y,z,type, record){
+  if(type) world.set(key(x,y,z), type);
+  else world.delete(key(x,y,z));
+  if(record) diffLog.push({x,y,z,block:type||null});
+  rebuildMeshes();
 }
 
-// ---------- local player state ----------
-const PLAYER_ID = 'p-' + Math.random().toString(36).slice(2,9);
-const COLORS = [0x5ee7c4,0xff8a5b,0xf6c453,0x8a7bff,0xff6ba8,0x4fc3f7,0xa3ff6b];
+// ---------------- inventory ----------------
+const HOTBAR_SIZE = 9;
+const inventory = new Array(HOTBAR_SIZE).fill(null); // {type,count}
+let selectedSlot = 0;
+// starter items
+inventory[0] = {type:'dirt', count:32};
+inventory[1] = {type:'stone', count:32};
+inventory[2] = {type:'wood_log', count:16};
+
+function addItem(type, count){
+  for(const slot of inventory){ if(slot && slot.type===type){ slot.count+=count; renderHotbar(); renderCraftPanel(); return; } }
+  const idx = inventory.findIndex(s=>!s);
+  if(idx>=0){ inventory[idx] = {type,count}; }
+  renderHotbar(); renderCraftPanel();
+}
+function removeItem(type, count){
+  const idx = inventory.findIndex(s=>s && s.type===type && s.count>=count);
+  if(idx<0) return false;
+  inventory[idx].count -= count;
+  if(inventory[idx].count<=0) inventory[idx]=null;
+  renderHotbar(); renderCraftPanel();
+  return true;
+}
+function hasItem(type,count){
+  const slot = inventory.find(s=>s && s.type===type);
+  return slot && slot.count>=count;
+}
+
+function renderHotbar(){
+  const bar = document.getElementById('hotbar');
+  bar.innerHTML = '';
+  inventory.forEach((slot,i)=>{
+    const div = document.createElement('div');
+    div.className = 'slot'+(i===selectedSlot?' selected':'');
+    if(slot){
+      const sw = document.createElement('div');
+      sw.className='swatch';
+      sw.style.background = '#'+SWATCH[slot.type].toString(16).padStart(6,'0');
+      div.appendChild(sw);
+      const cnt = document.createElement('div');
+      cnt.className='count'; cnt.textContent=slot.count;
+      div.appendChild(cnt);
+    }
+    const num = document.createElement('div');
+    num.className='label'; num.textContent = i+1;
+    div.appendChild(num);
+    div.addEventListener('click', ()=>{selectedSlot=i; renderHotbar();});
+    bar.appendChild(div);
+  });
+}
+renderHotbar();
+
+window.addEventListener('keydown', e=>{
+  if(e.code.startsWith('Digit')){
+    const n = parseInt(e.code.replace('Digit',''));
+    if(n>=1 && n<=9){ selectedSlot=n-1; renderHotbar(); }
+  }
+});
+window.addEventListener('wheel', e=>{
+  selectedSlot = (selectedSlot + (e.deltaY>0?1:-1) + HOTBAR_SIZE) % HOTBAR_SIZE;
+  renderHotbar();
+});
+
+// ---------------- crafting UI ----------------
+const overlay = document.getElementById('craft-overlay');
+function openCraft(){
+  overlay.style.display='flex';
+  document.exitPointerLock && document.exitPointerLock();
+  renderCraftPanel();
+}
+function closeCraft(){ overlay.style.display='none'; }
+document.getElementById('craft-close').addEventListener('click', closeCraft);
+
+function renderCraftPanel(){
+  const grid = document.getElementById('inv-grid');
+  grid.innerHTML='';
+  inventory.forEach(slot=>{
+    const cell = document.createElement('div'); cell.className='inv-cell';
+    if(slot){
+      const sw=document.createElement('div'); sw.className='swatch';
+      sw.style.background='#'+SWATCH[slot.type].toString(16).padStart(6,'0');
+      cell.appendChild(sw);
+      const c=document.createElement('div'); c.className='count'; c.textContent=slot.count;
+      cell.appendChild(c);
+    }
+    grid.appendChild(cell);
+  });
+
+  const list = document.getElementById('recipe-list');
+  list.innerHTML='';
+  RECIPES.forEach(r=>{
+    const row = document.createElement('div'); row.className='recipe';
+    const need = document.createElement('div'); need.className='r-need';
+    let canCraft = true;
+    r.need.forEach(([type,count])=>{
+      const have = (inventory.find(s=>s&&s.type===type)||{count:0}).count;
+      if(have<count) canCraft=false;
+      const span = document.createElement('span');
+      const sw = document.createElement('span'); sw.className='r-swatch';
+      sw.style.background='#'+SWATCH[type].toString(16).padStart(6,'0');
+      span.appendChild(sw);
+      span.append(`${type.replace('_',' ')} x${count} (have ${have})`);
+      need.appendChild(span);
+    });
+    const out = document.createElement('div'); out.className='r-out'; out.textContent='→ '+r.label;
+    const btn = document.createElement('button'); btn.textContent='Craft'; btn.disabled=!canCraft;
+    btn.addEventListener('click', ()=>{
+      for(const [type,count] of r.need) removeItem(type,count);
+      addItem(r.out[0], r.out[1]);
+    });
+    row.appendChild(need); row.appendChild(out); row.appendChild(btn);
+    list.appendChild(row);
+  });
+}
+
+window.addEventListener('keydown', e=>{
+  if(e.code==='KeyE'){
+    if(overlay.style.display==='flex') closeCraft(); else openCraft();
+  }
+  if(e.code==='Escape') closeCraft();
+});
+
+// ---------------- player + first-person controls ----------------
+const PLAYER_ID = 'p-'+Math.random().toString(36).slice(2,9);
+const COLORS = [0xff6b6b,0x5ee7c4,0xffd166,0x8a7bff,0x4fc3f7,0xff8a5b,0xa3ff6b];
 const myColor = COLORS[Math.floor(Math.random()*COLORS.length)];
+let myName = 'Guest'+Math.floor(Math.random()*1000);
+try{
+  const entered = prompt('Enter your player name:', myName);
+  if(entered && entered.trim()) myName = entered.trim().slice(0,16);
+}catch(e){ /* prompt blocked — keep default guest name */ }
 
-const me = {
-  id: PLAYER_ID,
-  pos: new THREE.Vector3(0, 0, 0),
-  yaw: 0,
-  vy: 0,
-  onGround: true,
-  score: 0,
-  mesh: makePlayerMesh(myColor),
-  color: myColor,
+const player = {
+  pos: new THREE.Vector3(0.5, heightAt(0,0)+3, 0.5),
+  yaw: 0, pitch: 0, vy: 0, onGround:false,
 };
-me.mesh.add(makeNameSprite('You', '#'+myColor.toString(16).padStart(6,'0')));
-scene.add(me.mesh);
+const MAX_HEALTH = 20; // 10 hearts, 2hp per heart
+let health = MAX_HEALTH;
 
-// ---------- input ----------
+function renderHearts(){
+  const el = document.getElementById('hearts');
+  el.innerHTML = '';
+  for(let i=0;i<10;i++){
+    const hp = health - i*2;
+    const span = document.createElement('span');
+    span.className = 'heart';
+    span.textContent = hp>=2 ? '❤️' : hp===1 ? '💔' : '🖤';
+    el.appendChild(span);
+  }
+}
+renderHearts();
+
+function showDamageFlash(){
+  const el = document.getElementById('damage-flash');
+  el.style.opacity = 0.45;
+  setTimeout(()=>{ el.style.opacity = 0; }, 160);
+}
+function showToast(text){
+  const el = document.getElementById('toast');
+  el.textContent = text;
+  el.style.opacity = 1;
+  setTimeout(()=>{ el.style.opacity = 0; }, 1400);
+}
+function respawnPlayer(){
+  const rx = Math.floor((Math.random()-0.5)*WORLD_R*1.6);
+  const rz = Math.floor((Math.random()-0.5)*WORLD_R*1.6);
+  player.pos.set(rx+0.5, heightAt(rx,rz)+3, rz+0.5);
+  player.vy = 0;
+  health = MAX_HEALTH;
+  renderHearts();
+  showToast('💀 You died — respawning');
+  sendState();
+}
+
+const domEl = renderer.domElement;
+const lockHint = document.getElementById('lock-hint');
+lockHint.addEventListener('click', ()=>{ domEl.requestPointerLock(); });
+document.addEventListener('pointerlockchange', ()=>{
+  lockHint.style.display = (document.pointerLockElement===domEl) ? 'none' : 'flex';
+});
+document.addEventListener('mousemove', e=>{
+  if(document.pointerLockElement!==domEl) return;
+  player.yaw -= e.movementX*0.0022;
+  player.pitch -= e.movementY*0.0022;
+  player.pitch = Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, player.pitch));
+});
+
 const keys = {};
 window.addEventListener('keydown', e=>keys[e.code]=true);
 window.addEventListener('keyup', e=>keys[e.code]=false);
 
-let mouseDown = false, lastX = 0;
-renderer.domElement.addEventListener('mousedown', e=>{mouseDown=true; lastX=e.clientX;});
-window.addEventListener('mouseup', ()=>mouseDown=false);
-window.addEventListener('mousemove', e=>{
-  if(mouseDown){
-    me.yaw -= (e.clientX - lastX) * 0.005;
-    lastX = e.clientX;
-  }
+// break / place via mouse (desktop)
+domEl.addEventListener('mousedown', e=>{
+  if(document.pointerLockElement!==domEl) return;
+  if(e.button===0) tryBreak();
+  if(e.button===2) tryPlace();
 });
+domEl.addEventListener('contextmenu', e=>e.preventDefault());
 
-// ---------- mobile touch controls (virtual joystick + look + jump) ----------
-const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-const joystickZone = document.getElementById('joystick-zone');
-const joystickKnob = document.getElementById('joystick-knob');
-const jumpBtn = document.getElementById('jump-btn');
+const raycaster = new THREE.Raycaster();
+raycaster.far = 6;
+const meleeRaycaster = new THREE.Raycaster();
+meleeRaycaster.far = 4.2;
+let lastAttack = 0;
+const ATTACK_COOLDOWN = 380;
+const ATTACK_DAMAGE = 2;
 
-// joyVec.x = strafe (-1..1), joyVec.z = forward/back (-1..1)
-const joyVec = {x:0, z:0};
-let joySprint = false;
-let joyTouchId = null;
-const JOY_RADIUS = 46; // max knob travel, px
-
-if(isTouchDevice){
-  joystickZone.style.display = 'block';
-  jumpBtn.style.display = 'flex';
-}
-
-function joyUpdateFromTouch(t){
-  const rect = joystickZone.getBoundingClientRect();
-  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-  const dx = t.clientX - cx, dy = t.clientY - cy;
-  const dist = Math.hypot(dx, dy);
-  const clamped = Math.min(dist, JOY_RADIUS);
-  const ang = Math.atan2(dy, dx);
-  const kx = Math.cos(ang)*clamped, ky = Math.sin(ang)*clamped;
-  joystickKnob.style.transform = `translate(${kx}px, ${ky}px)`;
-  joyVec.x = kx / JOY_RADIUS;
-  joyVec.z = -ky / JOY_RADIUS; // dragging up = forward
-  joySprint = clamped > JOY_RADIUS * 0.85;
-}
-function joyReset(){
-  joyTouchId = null;
-  joyVec.x = 0; joyVec.z = 0; joySprint = false;
-  joystickKnob.style.transform = 'translate(0px, 0px)';
-  joystickZone.classList.remove('active');
-}
-joystickZone.addEventListener('touchstart', e=>{
-  const t = e.changedTouches[0];
-  joyTouchId = t.identifier;
-  joystickZone.classList.add('active');
-  joyUpdateFromTouch(t);
-  e.preventDefault();
-}, {passive:false});
-joystickZone.addEventListener('touchmove', e=>{
-  for(const t of e.changedTouches){
-    if(t.identifier === joyTouchId){ joyUpdateFromTouch(t); e.preventDefault(); }
-  }
-}, {passive:false});
-joystickZone.addEventListener('touchend', e=>{
-  for(const t of e.changedTouches) if(t.identifier === joyTouchId) joyReset();
-  e.preventDefault();
-}, {passive:false});
-joystickZone.addEventListener('touchcancel', e=>{
-  for(const t of e.changedTouches) if(t.identifier === joyTouchId) joyReset();
-}, {passive:false});
-
-jumpBtn.addEventListener('touchstart', e=>{
-  keys['Space'] = true;
-  jumpBtn.classList.add('active');
-  e.preventDefault();
-}, {passive:false});
-jumpBtn.addEventListener('touchend', e=>{
-  keys['Space'] = false;
-  jumpBtn.classList.remove('active');
-  e.preventDefault();
-}, {passive:false});
-jumpBtn.addEventListener('touchcancel', e=>{
-  keys['Space'] = false;
-  jumpBtn.classList.remove('active');
-}, {passive:false});
-
-// drag-to-look: any touch that starts outside the joystick/jump controls rotates the camera
-let lookTouchId = null, lookLastX = 0;
-renderer.domElement.addEventListener('touchstart', e=>{
-  for(const t of e.changedTouches){
-    if(lookTouchId === null){
-      lookTouchId = t.identifier;
-      lookLastX = t.clientX;
-    }
-  }
-}, {passive:true});
-renderer.domElement.addEventListener('touchmove', e=>{
-  for(const t of e.changedTouches){
-    if(t.identifier === lookTouchId){
-      me.yaw -= (t.clientX - lookLastX) * 0.006;
-      lookLastX = t.clientX;
-    }
-  }
-}, {passive:true});
-window.addEventListener('touchend', e=>{
-  for(const t of e.changedTouches) if(t.identifier === lookTouchId) lookTouchId = null;
-});
-window.addEventListener('touchcancel', e=>{
-  for(const t of e.changedTouches) if(t.identifier === lookTouchId) lookTouchId = null;
-});
-
-// ---------- remote players (multiplayer) ----------
-const remotePlayers = {}; // id -> {mesh, targetPos, targetYaw, score, lastSeen}
-let channel = null;
-let mpAvailable = true;
-try{
-  channel = new BroadcastChannel('orb-rush-arena');
-}catch(e){
-  mpAvailable = false;
-}
-
-function sendState(){
-  if(!channel) return;
-  channel.postMessage({
-    type:'state',
-    id: PLAYER_ID,
-    color: me.color,
-    pos: [me.pos.x, me.pos.y, me.pos.z],
-    yaw: me.yaw,
-    score: me.score,
-  });
-}
-function sendOrbTaken(orbId){
-  if(!channel) return;
-  channel.postMessage({type:'orb-taken', orbId, by: PLAYER_ID});
-}
-if(channel){
-  channel.onmessage = (ev)=>{
-    const msg = ev.data;
-    if(!msg || msg.id === PLAYER_ID && msg.type==='state') return;
-    if(msg.type === 'state'){
-      let rp = remotePlayers[msg.id];
-      if(!rp){
-        const mesh = makePlayerMesh(msg.color);
-        mesh.add(makeNameSprite('Player', '#'+msg.color.toString(16).padStart(6,'0')));
-        scene.add(mesh);
-        rp = remotePlayers[msg.id] = {
-          mesh,
-          targetPos: new THREE.Vector3(...msg.pos),
-          targetYaw: msg.yaw,
-          score: msg.score,
-        };
-      }
-      rp.targetPos.set(msg.pos[0], msg.pos[1], msg.pos[2]);
-      rp.targetYaw = msg.yaw;
-      rp.score = msg.score;
-      rp.lastSeen = performance.now();
-    } else if(msg.type === 'orb-taken'){
-      const o = orbs.find(o=>o.id===msg.orbId);
-      if(o && o.alive){
-        o.alive = false;
-        o.mesh.visible = false;
-        if(msg.by !== PLAYER_ID) updateLeaderboard(); // score updates arrive via state too
-      }
-    }
-  };
-}
-
-// drop stale remote players (tab closed) after 4s of silence
-setInterval(()=>{
+function tryAttack(){
+  const meshes = Object.values(remotePlayers).map(rp=>rp.mesh);
+  if(meshes.length===0) return false;
+  meleeRaycaster.set(camera.position, camera.getWorldDirection(new THREE.Vector3()));
+  const hits = meleeRaycaster.intersectObjects(meshes, true);
+  if(hits.length===0) return false;
+  const targetId = hits[0].object.userData.ownerId;
+  if(!targetId) return false;
   const now = performance.now();
-  for(const id in remotePlayers){
-    if(now - (remotePlayers[id].lastSeen||0) > 4000){
-      scene.remove(remotePlayers[id].mesh);
-      delete remotePlayers[id];
-    }
+  if(now - lastAttack < ATTACK_COOLDOWN) return true; // still "used" the click on a player, just on cooldown
+  lastAttack = now;
+  if(channel) channel.postMessage({type:'hit', target:targetId, from:PLAYER_ID, damage:ATTACK_DAMAGE});
+  return true;
+}
+
+function castCenter(){
+  raycaster.set(camera.position, camera.getWorldDirection(new THREE.Vector3()));
+  const meshes = Object.values(instancedMeshes);
+  const hits = raycaster.intersectObjects(meshes);
+  if(hits.length===0) return null;
+  const hit = hits[0];
+  const coords = hit.object.userData.coords[hit.instanceId];
+  return {coords, normal: hit.face.normal.clone(), point: hit.point};
+}
+
+function tryBreak(){
+  if(tryAttack()) return;
+  const hit = castCenter();
+  if(!hit) return;
+  const {x,y,z} = hit.coords;
+  const type = getBlock(x,y,z);
+  if(!type) return;
+  setBlock(x,y,z,null,true);
+  sendBlockChange(x,y,z,null);
+  if(type==='coal_ore') addItem('coal',1);
+  else if(type==='leaves'){ /* nothing */ }
+  else addItem(type,1);
+}
+function tryPlace(){
+  const hit = castCenter();
+  if(!hit) return;
+  const slot = inventory[selectedSlot];
+  if(!slot || !BLOCKS[slot.type] || !BLOCKS[slot.type].placeable) return;
+  const nx = hit.coords.x + Math.round(hit.normal.x);
+  const ny = hit.coords.y + Math.round(hit.normal.y);
+  const nz = hit.coords.z + Math.round(hit.normal.z);
+  if(isSolid(nx,ny,nz)) return;
+  // don't place inside player
+  const px=Math.floor(player.pos.x), py=Math.floor(player.pos.y), pz=Math.floor(player.pos.z);
+  if(nx===px && nz===pz && (ny===py || ny===py-1 || ny===py+1)) return;
+  setBlock(nx,ny,nz, slot.type, true);
+  sendBlockChange(nx,ny,nz, slot.type);
+  slot.count--; if(slot.count<=0) inventory[selectedSlot]=null;
+  renderHotbar();
+}
+
+// movement + gravity + simple voxel collision
+const SPEED=5.2, SPRINT=8.5, JUMP_V=7.2, GRAVITY=-20;
+function solidAt(x,y,z){ return isSolid(Math.floor(x),Math.floor(y),Math.floor(z)); }
+function collideMove(pos, dx,dy,dz){
+  const r=0.28, feet=0.05, head=1.7;
+  // X
+  if(dx!==0){
+    const nx = pos.x+dx;
+    const blocked = solidAt(nx+Math.sign(dx)*r, pos.y+feet, pos.z-r)||solidAt(nx+Math.sign(dx)*r,pos.y+feet,pos.z+r)||
+                     solidAt(nx+Math.sign(dx)*r, pos.y+head, pos.z-r)||solidAt(nx+Math.sign(dx)*r,pos.y+head,pos.z+r);
+    if(!blocked) pos.x = nx;
   }
-  updateLeaderboard();
-}, 1000);
+  if(dz!==0){
+    const nz = pos.z+dz;
+    const blocked = solidAt(pos.x-r, pos.y+feet, nz+Math.sign(dz)*r)||solidAt(pos.x+r,pos.y+feet,nz+Math.sign(dz)*r)||
+                     solidAt(pos.x-r, pos.y+head, nz+Math.sign(dz)*r)||solidAt(pos.x+r,pos.y+head,nz+Math.sign(dz)*r);
+    if(!blocked) pos.z = nz;
+  }
+  if(dy!==0){
+    const ny = pos.y+dy;
+    let blocked;
+    if(dy<0) blocked = solidAt(pos.x-r,ny,pos.z-r)||solidAt(pos.x+r,ny,pos.z-r)||solidAt(pos.x-r,ny,pos.z+r)||solidAt(pos.x+r,ny,pos.z+r);
+    else blocked = solidAt(pos.x-r,ny+head,pos.z-r)||solidAt(pos.x+r,ny+head,pos.z-r)||solidAt(pos.x-r,ny+head,pos.z+r)||solidAt(pos.x+r,ny+head,pos.z+r);
+    if(!blocked) pos.y = ny; else { if(dy<0){player.onGround=true; player.vy=0;} else player.vy=0; }
+  }
+}
 
-// broadcast own state ~15x/sec
-setInterval(sendState, 66);
-
-// ---------- movement / physics ----------
-const GRAVITY = -20;
-const SPEED = 6;
-const SPRINT = 10;
-const JUMP_V = 7.5;
-const ARENA_R = 29;
+// ---- mobile input state ----
+let joyVec = {x:0,y:0};
+let touchYawEl = {id:null,lastX:0,lastY:0};
+let touchBreakHeld=false, touchPlaceHeld=false, touchJump=false;
 
 function updatePlayer(dt){
-  const forward = new THREE.Vector3(Math.sin(me.yaw), 0, Math.cos(me.yaw));
-  const right = new THREE.Vector3(Math.cos(me.yaw), 0, -Math.sin(me.yaw));
+  const forward = new THREE.Vector3(Math.sin(player.yaw),0,Math.cos(player.yaw));
+  const right = new THREE.Vector3(Math.cos(player.yaw),0,-Math.sin(player.yaw));
   let move = new THREE.Vector3();
   if(keys['KeyW']) move.add(forward);
   if(keys['KeyS']) move.sub(forward);
   if(keys['KeyD']) move.add(right);
   if(keys['KeyA']) move.sub(right);
-
-  // virtual joystick input (mobile)
-  if(Math.abs(joyVec.x) > 0.05 || Math.abs(joyVec.z) > 0.05){
-    move.addScaledVector(forward, joyVec.z);
-    move.addScaledVector(right, joyVec.x);
+  if(move.lengthSq()>1) move.normalize();
+  if(joyVec.x!==0 || joyVec.y!==0){
+    const jm = forward.clone().multiplyScalar(-joyVec.y).add(right.clone().multiplyScalar(joyVec.x));
+    if(jm.length()>move.length()) move.copy(jm.clampLength(0,1));
   }
-
+  const spd = (keys['ShiftLeft']||keys['ShiftRight']) ? SPRINT : SPEED;
   if(move.lengthSq()>0){
-    if(move.length() > 1) move.normalize();
-    const spd = (keys['ShiftLeft']||keys['ShiftRight']||joySprint) ? SPRINT : SPEED;
-    me.pos.addScaledVector(move, spd*dt);
+    collideMove(player.pos, move.x*spd*dt, 0, move.z*spd*dt);
   }
+  if((keys['Space']||touchJump) && player.onGround){ player.vy = JUMP_V; player.onGround=false; }
+  player.vy += GRAVITY*dt;
+  player.onGround=false;
+  collideMove(player.pos, 0, player.vy*dt, 0);
+  if(player.pos.y < -10){ player.pos.set(0.5, heightAt(0,0)+3, 0.5); player.vy=0; }
 
-  // jump / gravity
-  if(keys['Space'] && me.onGround){
-    me.vy = JUMP_V;
-    me.onGround = false;
-  }
-  me.vy += GRAVITY*dt;
-  me.pos.y += me.vy*dt;
-  if(me.pos.y <= 0){
-    me.pos.y = 0; me.vy = 0; me.onGround = true;
-  }
-
-  // stay inside arena
-  const dist = Math.hypot(me.pos.x, me.pos.z);
-  if(dist > ARENA_R){
-    const k = ARENA_R/dist;
-    me.pos.x *= k; me.pos.z *= k;
-  }
-
-  // pillar collision (simple push-out)
-  for(const p of pillars){
-    const dx = me.pos.x - p.mesh.position.x, dz = me.pos.z - p.mesh.position.z;
-    const d = Math.hypot(dx,dz);
-    const minD = p.radius + 0.45;
-    if(d < minD && d>0.0001){
-      const k = (minD-d)/d;
-      me.pos.x += dx*k; me.pos.z += dz*k;
-    }
-  }
-
-  me.mesh.position.copy(me.pos);
-  me.mesh.rotation.y = me.yaw;
-
-  // orb pickup
-  for(const o of orbs){
-    if(!o.alive) continue;
-    if(me.pos.distanceTo(o.mesh.position) < 1.0){
-      o.alive = false;
-      o.mesh.visible = false;
-      me.score++;
-      sendOrbTaken(o.id);
-      document.getElementById('score').textContent = me.score;
-      updateLeaderboard();
-      // respawn a fresh orb elsewhere after a delay
-      setTimeout(()=>{
-        const ang = Math.random()*Math.PI*2, rad = Math.random()*26;
-        o.mesh.position.set(Math.cos(ang)*rad, 0.6, Math.sin(ang)*rad);
-        o.mesh.visible = true;
-        o.alive = true;
-      }, 4000);
-    }
-  }
-
-  // camera follow (third person chase cam)
-  const camOffset = new THREE.Vector3(-Math.sin(me.yaw)*7, 4, -Math.cos(me.yaw)*7);
-  const desiredCamPos = me.pos.clone().add(camOffset);
-  camera.position.lerp(desiredCamPos, 0.12);
-  camera.lookAt(me.pos.clone().add(new THREE.Vector3(0,1.2,0)));
+  camera.position.set(player.pos.x, player.pos.y+1.6, player.pos.z);
+  camera.rotation.order='YXZ';
+  camera.rotation.y = player.yaw;
+  camera.rotation.x = player.pitch;
 }
 
-function updateRemotePlayers(dt){
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function appendChatMessage(name, color, text){
+  const log = document.getElementById('chat-log');
+  const row = document.createElement('div');
+  row.className = 'chat-msg';
+  row.innerHTML = `<b style="color:#${color.toString(16).padStart(6,'0')}">${escapeHtml(name)}:</b> ${escapeHtml(text)}`;
+  log.appendChild(row);
+  while(log.children.length>40) log.removeChild(log.firstChild);
+  setTimeout(()=>{ row.style.transition='opacity 0.6s'; row.style.opacity='0.35'; }, 8000);
+}
+function sendChat(text){
+  text = text.trim();
+  if(!text) return;
+  appendChatMessage(myName, myColor, text);
+  if(channel) channel.postMessage({type:'chat', id:PLAYER_ID, name:myName, color:myColor, text});
+}
+
+const chatInputEl = document.getElementById('chat-input');
+const chatRowEl = document.getElementById('chat-input-row');
+let chatOpen = false;
+function openChat(){
+  chatOpen = true;
+  for(const k in keys) keys[k]=false;
+  document.exitPointerLock && document.exitPointerLock();
+  chatRowEl.style.display = 'block';
+  chatInputEl.value = '';
+  chatInputEl.focus();
+}
+function closeChat(relock){
+  chatOpen = false;
+  chatRowEl.style.display = 'none';
+  chatInputEl.blur();
+  if(relock && !isTouch) domEl.requestPointerLock();
+}
+chatInputEl.addEventListener('keydown', e=>{
+  e.stopPropagation();
+  if(e.code==='Enter'){ e.preventDefault(); sendChat(chatInputEl.value); closeChat(true); }
+  else if(e.code==='Escape'){ e.preventDefault(); closeChat(true); }
+});
+window.addEventListener('keydown', e=>{
+  if(chatOpen) return;
+  if(e.code==='Enter'){ e.preventDefault(); openChat(); }
+});
+let channel = null;
+try{ channel = new BroadcastChannel('blockcraft-world'); }catch(e){}
+const remotePlayers = {};
+
+function makeAvatar(color, ownerId){
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({color});
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.9,0.3), mat);
+  body.position.y = 1.05; body.userData.ownerId = ownerId; g.add(body);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), mat);
+  head.position.y = 1.7; head.userData.ownerId = ownerId; g.add(head);
+  return g;
+}
+function createHealthBar(){
+  const cvs=document.createElement('canvas'); cvs.width=128; cvs.height=16;
+  const ctx=cvs.getContext('2d');
+  const tex=new THREE.CanvasTexture(cvs);
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:false}));
+  sprite.scale.set(1.1,0.14,1);
+  sprite.position.y=1.98;
+  return {cvs,ctx,tex,sprite};
+}
+function drawHealthBar(hb, hp){
+  const {ctx,cvs,tex} = hb;
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  ctx.fillStyle='#1a1f2e'; ctx.fillRect(0,0,cvs.width,cvs.height);
+  const frac = Math.max(0,hp)/MAX_HEALTH;
+  ctx.fillStyle = frac>0.5 ? '#5ee76b' : frac>0.25 ? '#ffcf6b' : '#ff5e5e';
+  ctx.fillRect(2,2,(cvs.width-4)*frac, cvs.height-4);
+  tex.needsUpdate = true;
+}
+function nameSprite(text,color){
+  const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=64;
+  const ctx=cvs.getContext('2d');
+  ctx.fillStyle='rgba(10,14,24,0.7)'; ctx.fillRect(0,0,256,64);
+  ctx.font='bold 26px sans-serif'; ctx.fillStyle=color; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(text,128,32);
+  const tex=new THREE.CanvasTexture(cvs);
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false}));
+  sprite.scale.set(1.8,0.45,1); sprite.position.y=2.2;
+  return sprite;
+}
+
+function sendState(){
+  if(!channel) return;
+  channel.postMessage({type:'state', id:PLAYER_ID, color:myColor, name:myName,
+    pos:[player.pos.x,player.pos.y,player.pos.z], yaw:player.yaw, health});
+}
+function sendBlockChange(x,y,z,block){
+  if(!channel) return;
+  channel.postMessage({type:'block', x,y,z,block});
+}
+if(channel){
+  channel.postMessage({type:'hello', id:PLAYER_ID});
+  channel.onmessage = ev=>{
+    const msg = ev.data;
+    if(msg.id===PLAYER_ID) return;
+    if(msg.type==='state'){
+      let rp = remotePlayers[msg.id];
+      if(!rp){
+        const mesh = makeAvatar(msg.color, msg.id);
+        mesh.add(nameSprite(msg.name||'Player','#'+msg.color.toString(16).padStart(6,'0')));
+        const hb = createHealthBar();
+        mesh.add(hb.sprite);
+        scene.add(mesh);
+        rp = remotePlayers[msg.id] = {mesh, target:new THREE.Vector3(...msg.pos), yaw:msg.yaw, health:msg.health??MAX_HEALTH, hb, name:msg.name||'Player'};
+        drawHealthBar(hb, rp.health);
+      }
+      rp.target.set(msg.pos[0],msg.pos[1],msg.pos[2]);
+      rp.yaw = msg.yaw;
+      rp.lastSeen = performance.now();
+      if(msg.health!==undefined && msg.health!==rp.health){
+        rp.health = msg.health;
+        drawHealthBar(rp.hb, rp.health);
+      }
+      updatePlayersPanel();
+    } else if(msg.type==='hit'){
+      if(msg.target===PLAYER_ID){
+        health = Math.max(0, health - msg.damage);
+        renderHearts();
+        showDamageFlash();
+        if(health<=0) respawnPlayer();
+        else sendState();
+      }
+    } else if(msg.type==='chat'){
+      appendChatMessage(msg.name||'Player', msg.color||0xffffff, msg.text||'');
+    } else if(msg.type==='block'){
+      setBlock(msg.x,msg.y,msg.z,msg.block,false);
+    } else if(msg.type==='hello'){
+      channel.postMessage({type:'world-sync', diffs:diffLog});
+    } else if(msg.type==='world-sync'){
+      msg.diffs.forEach(d=>setBlock(d.x,d.y,d.z,d.block,false));
+    }
+  };
+}
+setInterval(sendState, 66);
+setInterval(()=>{
+  const now=performance.now();
+  for(const id in remotePlayers){
+    if(now-(remotePlayers[id].lastSeen||0)>4000){
+      scene.remove(remotePlayers[id].mesh);
+      delete remotePlayers[id];
+    }
+  }
+  updatePlayersPanel();
+},1500);
+function updatePlayersPanel(){
+  const list = document.getElementById('p-list');
+  const rows = [{name:myName+' (you)', color:myColor}];
+  for(const id in remotePlayers) rows.push({name:remotePlayers[id].name||'Player', color: remotePlayers[id].mesh.children[0].material.color.getHex()});
+  list.innerHTML = rows.map(r=>`<div class="p-row"><span class="p-dot" style="background:#${r.color.toString(16).padStart(6,'0')}"></span>${r.name}</div>`).join('');
+}
+updatePlayersPanel();
+
+function updateRemote(){
   for(const id in remotePlayers){
     const rp = remotePlayers[id];
-    rp.mesh.position.lerp(rp.targetPos, 0.25);
-    rp.mesh.rotation.y += (rp.targetYaw - rp.mesh.rotation.y) * 0.25;
+    rp.mesh.position.lerp(new THREE.Vector3(rp.target.x, rp.target.y, rp.target.z), 0.25);
+    rp.mesh.rotation.y += (rp.yaw - rp.mesh.rotation.y)*0.25;
   }
 }
 
-function updateLeaderboard(){
-  const list = document.getElementById('lb-list');
-  const entries = [{name:'You', score:me.score, color:me.color}];
-  for(const id in remotePlayers){
-    entries.push({name:'Player', score:remotePlayers[id].score||0, color:remotePlayers[id].mesh.children[0].material.color.getHex()});
+// ---------------- mobile controls ----------------
+const isTouch = 'ontouchstart' in window;
+if(isTouch){
+  document.body.classList.add('touch-mode');
+  document.getElementById('mobile-controls').style.display='block';
+  lockHint.innerHTML = '<div>🧱 <span>Blockcraft</span></div><div>Tap to play</div>';
+  lockHint.addEventListener('touchstart', ()=>{ lockHint.style.display='none'; }, {once:true, passive:true});
+}
+const joyBase = document.getElementById('joystick-base');
+const joyStick = document.getElementById('joystick-stick');
+let joyTouchId=null;
+function updateJoy(t){
+  const rect=joyBase.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  let dx=t.clientX-cx, dy=t.clientY-cy;
+  const d=Math.hypot(dx,dy), R=45;
+  if(d>R){dx=dx/d*R; dy=dy/d*R;}
+  joyStick.style.transform = `translate(${dx}px,${dy}px)`;
+  joyVec.x = dx/R; joyVec.y = dy/R;
+}
+joyBase.addEventListener('touchstart', e=>{ e.preventDefault(); const t=e.changedTouches[0]; joyTouchId=t.identifier; updateJoy(t); }, {passive:false});
+
+let lookTouchId=null, lastLookX=0, lastLookY=0;
+domEl.addEventListener('touchstart', e=>{
+  for(const t of e.changedTouches){
+    if(lookTouchId===null){ lookTouchId=t.identifier; lastLookX=t.clientX; lastLookY=t.clientY; }
   }
-  entries.sort((a,b)=>b.score-a.score);
-  list.innerHTML = entries.map(e=>{
-    const hex = '#'+e.color.toString(16).padStart(6,'0');
-    return `<div class="lb-row"><span><span class="lb-color" style="background:${hex}"></span>${e.name}</span><span>${e.score}</span></div>`;
-  }).join('');
+}, {passive:true});
+window.addEventListener('touchmove', e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===joyTouchId){ updateJoy(t); }
+    else if(t.identifier===lookTouchId){
+      player.yaw -= (t.clientX-lastLookX)*0.004;
+      player.pitch -= (t.clientY-lastLookY)*0.004;
+      player.pitch = Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, player.pitch));
+      lastLookX=t.clientX; lastLookY=t.clientY;
+    }
+  }
+}, {passive:true});
+window.addEventListener('touchend', e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===joyTouchId){ joyTouchId=null; joyVec={x:0,y:0}; joyStick.style.transform='translate(0,0)'; }
+    if(t.identifier===lookTouchId) lookTouchId=null;
+  }
+});
+function bindHold(id, onDown, onUp){
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', e=>{e.preventDefault(); onDown();}, {passive:false});
+  el.addEventListener('touchend', e=>{e.preventDefault(); onUp&&onUp();}, {passive:false});
 }
-updateLeaderboard();
+bindHold('mjump', ()=>touchJump=true, ()=>touchJump=false);
+bindHold('mbreak', ()=>tryBreak());
+bindHold('mplace', ()=>tryPlace());
+bindHold('minv', ()=>{ if(overlay.style.display==='flex') closeCraft(); else openCraft(); });
+bindHold('mchat', ()=>{ if(chatOpen) closeChat(true); else openChat(); });
 
-if(!mpAvailable){
-  document.getElementById('banner').textContent = 'Multiplayer sync (BroadcastChannel) is not available in this browser — single-player mode only.';
-} else if(isTouchDevice){
-  document.getElementById('banner').textContent = 'Drag the left stick to move, tap Jump to jump, and drag anywhere else to look around. Open this page in another tab or device to play as a second player.';
-}
-
-// orb bob animation
-let t = 0;
-
-// ---------- main loop ----------
+// ---------------- main loop ----------------
 let last = performance.now();
 function animate(){
   requestAnimationFrame(animate);
   const now = performance.now();
   const dt = Math.min((now-last)/1000, 0.05);
   last = now;
-  t += dt;
-
-  updatePlayer(dt);
-  updateRemotePlayers(dt);
-
-  orbs.forEach((o,i)=>{
-    if(o.alive){
-      o.mesh.position.y = 0.6 + Math.sin(t*2 + i)*0.15;
-      o.mesh.rotation.y += dt*1.5;
-    }
-  });
-
+  if(overlay.style.display!=='flex'){
+    updatePlayer(dt);
+  }
+  updateRemote();
   renderer.render(scene, camera);
 }
 animate();

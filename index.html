@@ -409,6 +409,38 @@ All Rights Reserved.
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
+</script> 
+<script type="module">
+
+import { getAuth, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+
+const auth = getAuth();
+
+
+window.orderNow = function(){
+
+onAuthStateChanged(auth,(user)=>{
+
+    if(user){
+
+        window.location.href="order.html";
+
+    }
+    else{
+
+        alert("Please login first to place an order");
+
+        window.location.href="login.html";
+
+    }
+
+});
+
+}
+
+
 </script>    
 </body>
 </html>

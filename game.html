@@ -662,8 +662,8 @@ function updatePlayer(dt){
   let move = new THREE.Vector3();
   if(keys['KeyW']) move.sub(forward);
   if(keys['KeyS']) move.add(forward);
-  if(keys['KeyD']) move.sub(right);
-  if(keys['KeyA']) move.add(right);
+  if(keys['KeyD']) move.add(right);
+  if(keys['KeyA']) move.sub(right);
   if(move.lengthSq()>1) move.normalize();
   if(joyVec.x!==0 || joyVec.y!==0){
     const jm = forward.clone().multiplyScalar(-joyVec.y).add(right.clone().multiplyScalar(joyVec.x));

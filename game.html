@@ -660,10 +660,10 @@ function updatePlayer(dt){
   const forward = new THREE.Vector3(Math.sin(player.yaw),0,Math.cos(player.yaw));
   const right = new THREE.Vector3(Math.cos(player.yaw),0,-Math.sin(player.yaw));
   let move = new THREE.Vector3();
-  if(keys['KeyW']) move.add(forward);
-  if(keys['KeyS']) move.sub(forward);
-  if(keys['KeyD']) move.add(right);
-  if(keys['KeyA']) move.sub(right);
+  if(keys['KeyW']) move.sub(forward);
+  if(keys['KeyS']) move.add(forward);
+  if(keys['KeyD']) move.sub(right);
+  if(keys['KeyA']) move.add(right);
   if(move.lengthSq()>1) move.normalize();
   if(joyVec.x!==0 || joyVec.y!==0){
     const jm = forward.clone().multiplyScalar(-joyVec.y).add(right.clone().multiplyScalar(joyVec.x));

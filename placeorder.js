@@ -55,9 +55,38 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   createdAt: serverTimestamp()
 });
 
-    alert("Order submitted successfully!");
+    // 🎉 Confetti Celebration
+confetti({
+  particleCount: 180,
+  spread: 120,
+  origin: { y: 0.6 }
+});
 
-    window.location.href = "myorders.html";
+// Left Side
+setTimeout(() => {
+  confetti({
+    particleCount: 80,
+    angle: 60,
+    spread: 70,
+    origin: { x: 0 }
+  });
+}, 300);
+
+// Right Side
+setTimeout(() => {
+  confetti({
+    particleCount: 80,
+    angle: 120,
+    spread: 70,
+    origin: { x: 1 }
+  });
+}, 300);
+
+// Success Message
+setTimeout(() => {
+  alert("🎉 Order Submitted Successfully!\n\nThank you for choosing VocalVista.");
+  window.location.href = "myorders.html";
+}, 1500);
 
   } catch (error) {
 

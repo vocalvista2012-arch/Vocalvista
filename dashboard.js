@@ -56,7 +56,25 @@ const q = query(
 );
 
 const snapshot = await getDocs(q);
+let totalOrders = snapshot.size;
+let completedOrders = 0;
+let pendingOrders = 0;
 
+snapshot.forEach((doc) => {
+    const order = doc.data();
+
+    const status = (order.status || "").toLowerCase();
+
+    if (status === "completed" || status === "complete") {
+        completedOrders++;
+    } else {
+        pendingOrders++;
+    }
+});
+
+document.getElementById("totalOrders").textContent = totalOrders;
+document.getElementById("completedOrders").textContent = completedOrders;
+document.getElementById("pendingOrders").textContent = pendingOrders;
 ordersBox.innerHTML="";
 
 snapshot.forEach((doc)=>{

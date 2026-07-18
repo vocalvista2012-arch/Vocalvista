@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Vistacraft — Voxel World Multiplayer</title>
+<title>Blockcraft — Voxel World Multiplayer</title>
 <style>
   :root{
     --panel:#1a1f2ecc; --border:#3a4668; --text:#e8ecf3; --muted:#9aa3ba;
@@ -131,6 +131,30 @@
   .recipe button:disabled{background:#2a3450;color:#5a637d;cursor:not-allowed;}
   #craft-close{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;}
 
+  #customize-overlay{
+    position:absolute;inset:0;background:rgba(6,9,16,0.72);display:none;
+    align-items:center;justify-content:center;z-index:30;
+  }
+  #cust-panel{
+    width:420px;max-width:90vw;max-height:80vh;overflow:auto;position:relative;
+    background:#141a28;border:1px solid var(--border);border-radius:14px;padding:20px;color:var(--text);
+  }
+  #cust-panel h2{margin:0 0 4px;font-size:18px;color:var(--accent2);}
+  #cust-panel p.sub{margin:0 0 16px;color:var(--muted);font-size:12px;}
+  #cust-close{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;}
+  .cust-label{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px;}
+  #cust-name{width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--border);
+    background:#0f1420;color:var(--text);font-size:14px;outline:none;}
+  #cust-name:focus{border-color:var(--accent);}
+  .color-swatches{display:flex;gap:8px;flex-wrap:wrap;}
+  .color-swatch{width:32px;height:32px;border-radius:8px;cursor:pointer;border:3px solid transparent;box-sizing:border-box;}
+  .color-swatch.selected{border-color:#fff;}
+  #cust-apply{
+    margin-top:20px;width:100%;background:var(--accent);border:none;border-radius:8px;padding:11px;
+    font-weight:700;font-size:14px;color:#0a1a14;cursor:pointer;
+  }
+  #mcustom{top:16px;left:140px;bottom:auto;right:auto;width:52px;height:52px;font-size:9px;background:rgba(255,209,102,0.2);}
+
   #mobile-controls{display:none;position:absolute;inset:0;pointer-events:none;z-index:5;}
   #joystick-base{position:absolute;left:24px;bottom:calc(24px + env(safe-area-inset-bottom));width:110px;height:110px;border-radius:50%;
     background:rgba(20,26,42,0.55);border:2px solid var(--border);pointer-events:auto;}
@@ -150,9 +174,9 @@
 <body>
 
 <div id="lock-hint">
-  <div>🧱 <span>Vistacraft</span></div>
+  <div>🧱 <span>Blockcraft</span></div>
   <div>Click to play (mouse look locks to game)</div>
-  <small>WASD move · Space jump · Left-click break/hit · Right-click place · 1-9 hotbar · E crafting · Enter to chat</small>
+  <small>WASD move · Space jump · Left-click break/hit · Right-click place · 1-9 hotbar · E crafting · Enter to chat · C to customize</small>
 </div>
 
 <div id="crosshair"></div>
@@ -168,7 +192,7 @@
 
 <div id="top-panels">
   <div id="status">
-    <b>Vistacraft</b> — local multiplayer over BroadcastChannel<br>
+    <b>Blockcraft</b> — local multiplayer over BroadcastChannel<br>
     Open this file in multiple tabs to build together in the same world.
   </div>
   <div id="players-panel">
@@ -190,6 +214,24 @@
   </div>
 </div>
 
+<div id="customize-overlay">
+  <div id="cust-panel">
+    <button id="cust-close">✕</button>
+    <h2>Customize Character</h2>
+    <p class="sub">Only you see this — others will see the result</p>
+    <label class="cust-label">Name</label>
+    <input id="cust-name" maxlength="16" autocomplete="off">
+    <label class="cust-label">Body color</label>
+    <div class="color-swatches" id="body-swatches"></div>
+    <label class="cust-label">Shirt / head color</label>
+    <div class="color-swatches" id="head-swatches"></div>
+    <label class="cust-label" style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+      <input type="checkbox" id="cust-hat" style="width:16px;height:16px;"> Wear a hat
+    </label>
+    <button id="cust-apply">Apply</button>
+  </div>
+</div>
+
 <div id="mobile-controls">
   <div id="joystick-base"><div id="joystick-stick"></div></div>
   <button class="mbtn" id="mjump">JUMP</button>
@@ -197,7 +239,9 @@
   <button class="mbtn" id="mplace">PLACE</button>
   <button class="mbtn" id="minv">CRAFT</button>
   <button class="mbtn" id="mchat">CHAT</button>
+  <button class="mbtn" id="mcustom">ME</button>
 </div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -227,6 +271,10 @@ const BLOCKS = {
 const ITEMS = {
   stick: {color:0x9c7a4d},
   coal:  {color:0x1c1c1c},
+  wool:  {color:0xf5f5f0},
+  raw_beef: {color:0xaa3b3b},
+  raw_porkchop: {color:0xffb3b3},
+  raw_chicken: {color:0xffe0b3},
 };
 const SWATCH = {...Object.fromEntries(Object.entries(BLOCKS).map(([k,v])=>[k,v.color])),
                 ...Object.fromEntries(Object.entries(ITEMS).map(([k,v])=>[k,v.color]))};
@@ -237,6 +285,15 @@ const RECIPES = [
   {need:[['planks',4]], out:['crafting_table',1], label:'1 Crafting Table'},
   {need:[['coal',1],['stick',1]], out:['torch',4], label:'4 Torches'},
 ];
+
+// ---------------- mobs ----------------
+const MOB_TYPES = {
+  sheep:   {body:0xf2f2ea, head:0xf2f2ea, leg:0x3a3a3a, size:[0.7,0.5,0.5], speed:1.0, maxHealth:8},
+  cow:     {body:0x6b4423, head:0x3a2a1a, leg:0x2a1f15, size:[0.9,0.6,0.55], speed:0.9, maxHealth:10},
+  pig:     {body:0xf7b6c2, head:0xf2a0b0, leg:0xd98fa0, size:[0.7,0.45,0.5], speed:1.1, maxHealth:8},
+  chicken: {body:0xffffff, head:0xffffff, leg:0xffcc33, size:[0.4,0.35,0.3], speed:1.4, maxHealth:4},
+};
+const MOB_DROPS = {sheep:'wool', cow:'raw_beef', pig:'raw_porkchop', chicken:'raw_chicken'};
 
 // ---------------- deterministic world generation ----------------
 const SEED = 91711;
@@ -250,42 +307,63 @@ function noise2D(x,y){
 }
 function heightAt(x,z){ return 4 + Math.floor(noise2D(x*0.11, z*0.11)*7); }
 
-const WORLD_R = 16;
-const world = new Map(); // "x,y,z" -> blockType
+// ---------------- infinite chunked world ----------------
+const CHUNK_SIZE = 16;      // blocks per chunk side (x/z)
+const RENDER_DIST = 2;      // chunks loaded around the player in each direction (5x5 grid)
 function key(x,y,z){ return x+','+y+','+z; }
-function getBlock(x,y,z){ return world.get(key(x,y,z)); }
-function isSolid(x,y,z){ return world.has(key(x,y,z)); }
+function chunkOf(v){ return Math.floor(v/CHUNK_SIZE); }
+function chunkKey(cx,cz){ return cx+','+cz; }
 
-function generateWorld(){
-  for(let x=-WORLD_R;x<=WORLD_R;x++){
-    for(let z=-WORLD_R;z<=WORLD_R;z++){
+// chunks: Map "cx,cz" -> { blocks:Map(key->type), removed:Set(key), terrainDone, inScene, meshes:{type:InstancedMesh} }
+const chunks = new Map();
+function ensureChunk(cx,cz){
+  const k = chunkKey(cx,cz);
+  let ch = chunks.get(k);
+  if(!ch){ ch = {blocks:new Map(), removed:new Set(), terrainDone:false, inScene:false, meshes:{}}; chunks.set(k,ch); }
+  return ch;
+}
+// writes a procedurally-generated block, respecting any edit/removal that already exists there
+// (this also lets tree canopies from one chunk correctly "spill over" into a neighboring chunk)
+function setTerrainBlock(x,y,z,type){
+  const ch = ensureChunk(chunkOf(x), chunkOf(z));
+  const bk = key(x,y,z);
+  if(!ch.blocks.has(bk) && !ch.removed.has(bk)) ch.blocks.set(bk, type);
+}
+function generateChunkTerrain(cx,cz){
+  const ch = ensureChunk(cx,cz);
+  if(ch.terrainDone) return;
+  const x0=cx*CHUNK_SIZE, z0=cz*CHUNK_SIZE;
+  for(let lx=0; lx<CHUNK_SIZE; lx++){
+    for(let lz=0; lz<CHUNK_SIZE; lz++){
+      const x=x0+lx, z=z0+lz;
       const h = heightAt(x,z);
       for(let y=0;y<=h;y++){
         let t;
         if(y===h) t='grass';
         else if(y>=h-2) t='dirt';
-        else{
-          t = (hash2(x*13.7+1,y*7.3+z*5.1) < 0.055) ? 'coal_ore' : 'stone';
-        }
-        world.set(key(x,y,z), t);
+        else t = (hash2(x*13.7+1,y*7.3+z*5.1) < 0.055) ? 'coal_ore' : 'stone';
+        setTerrainBlock(x,y,z,t);
       }
-      // trees
-      if(hash2(x*3.1,z*7.2) < 0.035 && Math.abs(x)<WORLD_R-2 && Math.abs(z)<WORLD_R-2){
+      if(hash2(x*3.1,z*7.2) < 0.035){
         const th = 3+Math.floor(hash2(x*9.3,z*2.1)*2);
-        for(let i=1;i<=th;i++) world.set(key(x,h+i,z),'wood_log');
-        for(let lx=-2;lx<=2;lx++)for(let lz=-2;lz<=2;lz++)for(let ly=-1;ly<=1;ly++){
-          if(Math.abs(lx)+Math.abs(lz)+Math.abs(ly)<=3){
-            const kx=x+lx, ky=h+th+ly, kz=z+lz;
-            if(!world.has(key(kx,ky,kz))) world.set(key(kx,ky,kz),'leaves');
+        for(let i=1;i<=th;i++) setTerrainBlock(x,h+i,z,'wood_log');
+        for(let lx2=-2;lx2<=2;lx2++)for(let lz2=-2;lz2<=2;lz2++)for(let ly2=-1;ly2<=1;ly2++){
+          if(Math.abs(lx2)+Math.abs(lz2)+Math.abs(ly2)<=3){
+            setTerrainBlock(x+lx2, h+th+ly2, z+lz2, 'leaves');
           }
         }
       }
     }
   }
+  ch.terrainDone = true;
 }
-generateWorld();
+function getBlock(x,y,z){
+  const ch = chunks.get(chunkKey(chunkOf(x),chunkOf(z)));
+  return ch ? ch.blocks.get(key(x,y,z)) : undefined;
+}
+function isSolid(x,y,z){ return !!getBlock(x,y,z); }
 
-// diff log for multiplayer late-join sync: records edits since base gen
+// diff log for multiplayer late-join sync: records every edit since the session started
 const diffLog = []; // {x,y,z,block|null}
 
 // ---------------- scene setup ----------------
@@ -319,14 +397,13 @@ for(const [name,def] of Object.entries(BLOCKS)){
   });
 }
 
-let instancedMeshes = {}; // type -> THREE.InstancedMesh
-function rebuildMeshes(){
-  for(const m of Object.values(instancedMeshes)) scene.remove(m);
-  instancedMeshes = {};
+// build (or rebuild) the InstancedMeshes for one chunk, from its own block data only
+function buildChunkMeshes(cx,cz){
+  const ch = ensureChunk(cx,cz);
+  for(const m of Object.values(ch.meshes)) scene.remove(m);
+  ch.meshes = {};
   const byType = {};
-  for(const [k,type] of world.entries()){
-    (byType[type] = byType[type]||[]).push(k);
-  }
+  for(const [k,type] of ch.blocks.entries()) (byType[type]=byType[type]||[]).push(k);
   for(const [type, keys] of Object.entries(byType)){
     const def = BLOCKS[type];
     const mesh = new THREE.InstancedMesh(boxGeo, materials[type], keys.length);
@@ -338,27 +415,156 @@ function rebuildMeshes(){
       coords[i] = {x,y,z};
       const scl = def.scale || [1,1,1];
       const yOff = def.yOff || 0;
-      m4.compose(
-        new THREE.Vector3(x, y+yOff, z),
-        new THREE.Quaternion(),
-        new THREE.Vector3(...scl)
-      );
+      m4.compose(new THREE.Vector3(x, y+yOff, z), new THREE.Quaternion(), new THREE.Vector3(...scl));
       mesh.setMatrixAt(i, m4);
     });
     mesh.instanceMatrix.needsUpdate = true;
     mesh.userData.coords = coords;
-    mesh.userData.blockType = type;
     scene.add(mesh);
-    instancedMeshes[type] = mesh;
+    ch.meshes[type] = mesh;
+  }
+  ch.inScene = true;
+}
+function unloadChunkMeshes(cx,cz){
+  const ch = chunks.get(chunkKey(cx,cz));
+  if(!ch || !ch.inScene) return;
+  for(const m of Object.values(ch.meshes)) scene.remove(m);
+  ch.meshes = {};
+  ch.inScene = false;
+  despawnMobsForChunk(cx,cz);
+}
+
+// ---- mobs: persistent per-chunk data (chunkMobs) + live meshes (activeMobs) ----
+const chunkMobs = new Map();  // "cx,cz" -> [{id,type,pos:[x,y,z],yaw,health,dead,wanderTimer,moving,fleeUntil}]
+const activeMobs = new Map(); // mobId -> {data, group, chunkKey}
+
+function makeMobMesh(type){
+  const def = MOB_TYPES[type];
+  const g = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({color:def.body});
+  const body = new THREE.Mesh(new THREE.BoxGeometry(def.size[0],def.size[1],def.size[2]), bodyMat);
+  body.position.y = def.size[1]/2 + 0.35;
+  body.castShadow = true;
+  g.add(body);
+  const headMat = new THREE.MeshStandardMaterial({color:def.head});
+  const hs = def.size[1]*0.8;
+  const head = new THREE.Mesh(new THREE.BoxGeometry(hs,hs,hs), headMat);
+  head.position.set(0, body.position.y + def.size[1]*0.15, def.size[2]/2 + hs*0.4);
+  head.castShadow = true;
+  g.add(head);
+  const legMat = new THREE.MeshStandardMaterial({color:def.leg});
+  const legGeo = new THREE.BoxGeometry(0.12, 0.35, 0.12);
+  for(const lx of [def.size[0]/2-0.09, -(def.size[0]/2-0.09)]){
+    for(const lz of [def.size[2]/2-0.08, -(def.size[2]/2-0.08)]){
+      const leg = new THREE.Mesh(legGeo, legMat);
+      leg.position.set(lx, 0.175, lz);
+      g.add(leg);
+    }
+  }
+  return g;
+}
+
+function ensureMobsForChunk(cx,cz){
+  const ck = chunkKey(cx,cz);
+  if(!chunkMobs.has(ck)){
+    const list = [];
+    const roll = hash2(cx*17.7+3, cz*13.3+5);
+    if(roll <= 0.55){
+      const count = 1+Math.floor(hash2(cx*5.1,cz*9.7)*3);
+      const types = Object.keys(MOB_TYPES);
+      for(let i=0;i<count;i++){
+        const lx = Math.floor(hash2(cx*31+i*7, cz*11+i*3)*CHUNK_SIZE);
+        const lz = Math.floor(hash2(cx*13+i*5, cz*29+i*9)*CHUNK_SIZE);
+        const x = cx*CHUNK_SIZE+lx, z = cz*CHUNK_SIZE+lz;
+        const h = heightAt(x,z);
+        if(getBlock(x,h,z)!=='grass') continue;
+        const type = types[Math.floor(hash2(x*3.3+i,z*7.7+i)*types.length)%types.length];
+        list.push({id:'m'+cx+'_'+cz+'_'+i, type, pos:[x+0.5,h+1,z+0.5], yaw:Math.random()*Math.PI*2,
+          health:MOB_TYPES[type].maxHealth, dead:false, wanderTimer:0, moving:false, fleeUntil:0});
+      }
+    }
+    chunkMobs.set(ck, list);
+  }
+  for(const data of chunkMobs.get(ck)){
+    if(data.dead || activeMobs.has(data.id)) continue;
+    const group = makeMobMesh(data.type);
+    group.position.set(...data.pos);
+    group.rotation.y = data.yaw;
+    group.traverse(o=>{ if(o.isMesh) o.userData.mobId = data.id; });
+    scene.add(group);
+    activeMobs.set(data.id, {data, group, chunkKey:ck});
   }
 }
-rebuildMeshes();
+function despawnMobsForChunk(cx,cz){
+  const ck = chunkKey(cx,cz);
+  for(const [id,m] of activeMobs.entries()){
+    if(m.chunkKey===ck){ scene.remove(m.group); activeMobs.delete(id); }
+  }
+}
+function updateMobs(dt){
+  const now = performance.now();
+  for(const m of activeMobs.values()){
+    const d = m.data;
+    const def = MOB_TYPES[d.type];
+    d.wanderTimer -= dt;
+    if(d.wanderTimer<=0){
+      d.wanderTimer = 2+Math.random()*3;
+      d.yaw = Math.random()*Math.PI*2;
+      d.moving = Math.random()<0.7;
+    }
+    if(d.fleeUntil>now) d.moving = true;
+    if(d.moving){
+      const nx = d.pos[0]+Math.sin(d.yaw)*def.speed*dt;
+      const nz = d.pos[2]+Math.cos(d.yaw)*def.speed*dt;
+      const curH = heightAt(Math.round(d.pos[0]), Math.round(d.pos[2]));
+      const newH = heightAt(Math.round(nx), Math.round(nz));
+      if(Math.abs(newH-curH)<=1){ d.pos[0]=nx; d.pos[2]=nz; d.pos[1]=newH+1; }
+      else d.wanderTimer = 0;
+    }
+    m.group.position.set(d.pos[0],d.pos[1],d.pos[2]);
+    m.group.rotation.y = d.yaw;
+  }
+}
+function ensureChunkLoaded(cx,cz){
+  const ch = ensureChunk(cx,cz);
+  if(!ch.terrainDone) generateChunkTerrain(cx,cz);
+  if(!ch.inScene) buildChunkMeshes(cx,cz);
+  ensureMobsForChunk(cx,cz);
+}
+// called whenever the player crosses into a new chunk: loads the ring around them, unloads the rest
+let lastPCX=null, lastPCZ=null;
+function updateChunks(pcx,pcz){
+  const keep = new Set();
+  for(let cx=pcx-RENDER_DIST; cx<=pcx+RENDER_DIST; cx++){
+    for(let cz=pcz-RENDER_DIST; cz<=pcz+RENDER_DIST; cz++){
+      keep.add(chunkKey(cx,cz));
+      ensureChunkLoaded(cx,cz);
+    }
+  }
+  for(const [k,ch] of chunks.entries()){
+    if(!ch.inScene) continue;
+    const [ccx,ccz] = k.split(',').map(Number);
+    if(Math.max(Math.abs(ccx-pcx), Math.abs(ccz-pcz)) > RENDER_DIST+1){
+      unloadChunkMeshes(ccx,ccz);
+    }
+  }
+}
 
-function setBlock(x,y,z,type, record){
-  if(type) world.set(key(x,y,z), type);
-  else world.delete(key(x,y,z));
+// edits a block (break=null, place=type), updates the owning chunk, and (if that chunk is
+// currently rendered) rebuilds just that chunk's meshes — never the whole world.
+function editBlock(x,y,z,type, record){
+  const cx=chunkOf(x), cz=chunkOf(z);
+  const ch = ensureChunk(cx,cz);
+  const bk = key(x,y,z);
+  if(type){ ch.blocks.set(bk,type); ch.removed.delete(bk); }
+  else { ch.blocks.delete(bk); ch.removed.add(bk); }
   if(record) diffLog.push({x,y,z,block:type||null});
-  rebuildMeshes();
+  if(ch.inScene) buildChunkMeshes(cx,cz);
+}
+function getLoadedBlockMeshes(){
+  const list = [];
+  for(const ch of chunks.values()) if(ch.inScene) list.push(...Object.values(ch.meshes));
+  return list;
 }
 
 // ---------------- inventory ----------------
@@ -477,16 +683,79 @@ function renderCraftPanel(){
 }
 
 window.addEventListener('keydown', e=>{
-  if(e.code==='KeyE'){
+  if(e.code==='KeyE' && customOverlay.style.display!=='flex'){
     if(overlay.style.display==='flex') closeCraft(); else openCraft();
   }
-  if(e.code==='Escape') closeCraft();
+  if(e.code==='Escape'){ closeCraft(); if(customOverlay.style.display==='flex') closeCustomize(true); }
 });
 
 // ---------------- player + first-person controls ----------------
 const PLAYER_ID = 'p-'+Math.random().toString(36).slice(2,9);
-const COLORS = [0xff6b6b,0x5ee7c4,0xffd166,0x8a7bff,0x4fc3f7,0xff8a5b,0xa3ff6b];
-const myColor = COLORS[Math.floor(Math.random()*COLORS.length)];
+const COLORS = [0xff6b6b,0x5ee7c4,0xffd166,0x8a7bff,0x4fc3f7,0xff8a5b,0xa3ff6b,0xffffff,0x333333,0xffc0cb];
+let myColor = COLORS[Math.floor(Math.random()*COLORS.length)];
+let myHeadColor = COLORS[Math.floor(Math.random()*COLORS.length)];
+let myHat = false;
+
+// ---------------- character customization ----------------
+const customOverlay = document.getElementById('customize-overlay');
+const custNameEl = document.getElementById('cust-name');
+const custHatEl = document.getElementById('cust-hat');
+let selectedBodyColor = myColor;
+let selectedHeadColor = myHeadColor;
+
+function buildSwatches(containerId, onPick){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  COLORS.forEach(c=>{
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch';
+    sw.style.background = '#'+c.toString(16).padStart(6,'0');
+    sw.dataset.color = c;
+    sw.addEventListener('click', ()=>{ onPick(c); refreshSwatchSelection(); });
+    el.appendChild(sw);
+  });
+}
+function refreshSwatchSelection(){
+  document.querySelectorAll('#body-swatches .color-swatch').forEach(sw=>{
+    sw.classList.toggle('selected', Number(sw.dataset.color)===selectedBodyColor);
+  });
+  document.querySelectorAll('#head-swatches .color-swatch').forEach(sw=>{
+    sw.classList.toggle('selected', Number(sw.dataset.color)===selectedHeadColor);
+  });
+}
+buildSwatches('body-swatches', c=>selectedBodyColor=c);
+buildSwatches('head-swatches', c=>selectedHeadColor=c);
+
+function openCustomize(){
+  customOverlay.style.display = 'flex';
+  document.exitPointerLock && document.exitPointerLock();
+  custNameEl.value = myName;
+  custHatEl.checked = myHat;
+  selectedBodyColor = myColor;
+  selectedHeadColor = myHeadColor;
+  refreshSwatchSelection();
+}
+function closeCustomize(relock){
+  customOverlay.style.display = 'none';
+  if(relock && !isTouch) domEl.requestPointerLock();
+}
+document.getElementById('cust-close').addEventListener('click', ()=>closeCustomize(true));
+document.getElementById('cust-apply').addEventListener('click', ()=>{
+  const entered = custNameEl.value.trim();
+  if(entered) myName = entered.slice(0,16);
+  myColor = selectedBodyColor;
+  myHeadColor = selectedHeadColor;
+  myHat = custHatEl.checked;
+  sendState();
+  closeCustomize(true);
+});
+custNameEl.addEventListener('keydown', e=>e.stopPropagation());
+window.addEventListener('keydown', e=>{
+  if(chatOpen || overlay.style.display==='flex') return;
+  if(e.code==='KeyC'){
+    if(customOverlay.style.display==='flex') closeCustomize(true); else openCustomize();
+  }
+});
 let myName = 'Guest'+Math.floor(Math.random()*1000);
 try{
   const entered = prompt('Enter your player name:', myName);
@@ -497,6 +766,8 @@ const player = {
   pos: new THREE.Vector3(0.5, heightAt(0,0)+3, 0.5),
   yaw: 0, pitch: 0, vy: 0, onGround:false,
 };
+updateChunks(chunkOf(player.pos.x), chunkOf(player.pos.z));
+lastPCX = chunkOf(player.pos.x); lastPCZ = chunkOf(player.pos.z);
 const MAX_HEALTH = 20; // 10 hearts, 2hp per heart
 let health = MAX_HEALTH;
 
@@ -525,8 +796,8 @@ function showToast(text){
   setTimeout(()=>{ el.style.opacity = 0; }, 1400);
 }
 function respawnPlayer(){
-  const rx = Math.floor((Math.random()-0.5)*WORLD_R*1.6);
-  const rz = Math.floor((Math.random()-0.5)*WORLD_R*1.6);
+  const rx = Math.floor(player.pos.x) + Math.floor((Math.random()-0.5)*24);
+  const rz = Math.floor(player.pos.z) + Math.floor((Math.random()-0.5)*24);
   player.pos.set(rx+0.5, heightAt(rx,rz)+3, rz+0.5);
   player.vy = 0;
   health = MAX_HEALTH;
@@ -569,23 +840,49 @@ const ATTACK_COOLDOWN = 380;
 const ATTACK_DAMAGE = 2;
 
 function tryAttack(){
-  const meshes = Object.values(remotePlayers).map(rp=>rp.mesh);
+  const meshes = [];
+  for(const rp of Object.values(remotePlayers)) meshes.push(rp.mesh);
+  for(const m of activeMobs.values()) meshes.push(m.group);
   if(meshes.length===0) return false;
   meleeRaycaster.set(camera.position, camera.getWorldDirection(new THREE.Vector3()));
   const hits = meleeRaycaster.intersectObjects(meshes, true);
   if(hits.length===0) return false;
-  const targetId = hits[0].object.userData.ownerId;
-  if(!targetId) return false;
+  const hitObj = hits[0].object;
   const now = performance.now();
-  if(now - lastAttack < ATTACK_COOLDOWN) return true; // still "used" the click on a player, just on cooldown
-  lastAttack = now;
-  if(channel) channel.postMessage({type:'hit', target:targetId, from:PLAYER_ID, damage:ATTACK_DAMAGE});
-  return true;
+  if(hitObj.userData.ownerId){
+    if(now - lastAttack < ATTACK_COOLDOWN) return true;
+    lastAttack = now;
+    if(channel) channel.postMessage({type:'hit', target:hitObj.userData.ownerId, from:PLAYER_ID, damage:ATTACK_DAMAGE});
+    return true;
+  }
+  if(hitObj.userData.mobId){
+    if(now - lastAttack < ATTACK_COOLDOWN) return true;
+    lastAttack = now;
+    attackMob(hitObj.userData.mobId);
+    return true;
+  }
+  return false;
+}
+function attackMob(id){
+  const m = activeMobs.get(id);
+  if(!m || m.data.dead) return;
+  const d = m.data;
+  d.health -= ATTACK_DAMAGE;
+  d.fleeUntil = performance.now() + 2200;
+  d.yaw = Math.atan2(d.pos[0]-player.pos.x, d.pos[2]-player.pos.z); // flee away from the player
+  d.wanderTimer = 0;
+  if(d.health<=0){
+    d.dead = true;
+    scene.remove(m.group);
+    activeMobs.delete(id);
+    const drop = MOB_DROPS[d.type];
+    if(drop){ addItem(drop,1); showToast('+1 '+drop.replace('raw_','').replace('_',' ')); }
+  }
 }
 
 function castCenter(){
   raycaster.set(camera.position, camera.getWorldDirection(new THREE.Vector3()));
-  const meshes = Object.values(instancedMeshes);
+  const meshes = getLoadedBlockMeshes();
   const hits = raycaster.intersectObjects(meshes);
   if(hits.length===0) return null;
   const hit = hits[0];
@@ -600,7 +897,7 @@ function tryBreak(){
   const {x,y,z} = hit.coords;
   const type = getBlock(x,y,z);
   if(!type) return;
-  setBlock(x,y,z,null,true);
+  editBlock(x,y,z,null,true);
   sendBlockChange(x,y,z,null);
   if(type==='coal_ore') addItem('coal',1);
   else if(type==='leaves'){ /* nothing */ }
@@ -618,7 +915,7 @@ function tryPlace(){
   // don't place inside player
   const px=Math.floor(player.pos.x), py=Math.floor(player.pos.y), pz=Math.floor(player.pos.z);
   if(nx===px && nz===pz && (ny===py || ny===py-1 || ny===py+1)) return;
-  setBlock(nx,ny,nz, slot.type, true);
+  editBlock(nx,ny,nz, slot.type, true);
   sendBlockChange(nx,ny,nz, slot.type);
   slot.count--; if(slot.count<=0) inventory[selectedSlot]=null;
   renderHotbar();
@@ -660,8 +957,8 @@ function updatePlayer(dt){
   const forward = new THREE.Vector3(Math.sin(player.yaw),0,Math.cos(player.yaw));
   const right = new THREE.Vector3(Math.cos(player.yaw),0,-Math.sin(player.yaw));
   let move = new THREE.Vector3();
-  if(keys['KeyW']) move.sub(forward);
-  if(keys['KeyS']) move.add(forward);
+  if(keys['KeyW']) move.add(forward);
+  if(keys['KeyS']) move.sub(forward);
   if(keys['KeyD']) move.add(right);
   if(keys['KeyA']) move.sub(right);
   if(move.lengthSq()>1) move.normalize();
@@ -678,6 +975,12 @@ function updatePlayer(dt){
   player.onGround=false;
   collideMove(player.pos, 0, player.vy*dt, 0);
   if(player.pos.y < -10){ player.pos.set(0.5, heightAt(0,0)+3, 0.5); player.vy=0; }
+
+  const pcx = chunkOf(player.pos.x), pcz = chunkOf(player.pos.z);
+  if(pcx!==lastPCX || pcz!==lastPCZ){
+    lastPCX=pcx; lastPCZ=pcz;
+    updateChunks(pcx,pcz);
+  }
 
   camera.position.set(player.pos.x, player.pos.y+1.6, player.pos.z);
   camera.rotation.order='YXZ';
@@ -734,14 +1037,28 @@ let channel = null;
 try{ channel = new BroadcastChannel('blockcraft-world'); }catch(e){}
 const remotePlayers = {};
 
-function makeAvatar(color, ownerId){
+function makeAvatar(bodyColor, headColor, hasHat, ownerId){
   const g = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({color});
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.9,0.3), mat);
+  const bodyMat = new THREE.MeshStandardMaterial({color:bodyColor});
+  const headMat = new THREE.MeshStandardMaterial({color:headColor});
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.9,0.3), bodyMat);
   body.position.y = 1.05; body.userData.ownerId = ownerId; g.add(body);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), mat);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), headMat);
   head.position.y = 1.7; head.userData.ownerId = ownerId; g.add(head);
+  g.userData.bodyMat = bodyMat;
+  g.userData.headMat = headMat;
+  g.userData.hat = null;
+  setAvatarHat(g, hasHat, ownerId);
   return g;
+}
+function setAvatarHat(g, hasHat, ownerId){
+  if(hasHat && !g.userData.hat){
+    const hat = new THREE.Mesh(new THREE.BoxGeometry(0.44,0.18,0.44), new THREE.MeshStandardMaterial({color:0x2a2a2a}));
+    hat.position.y = 1.98; hat.userData.ownerId = ownerId;
+    g.add(hat); g.userData.hat = hat;
+  } else if(!hasHat && g.userData.hat){
+    g.remove(g.userData.hat); g.userData.hat = null;
+  }
 }
 function createHealthBar(){
   const cvs=document.createElement('canvas'); cvs.width=128; cvs.height=16;
@@ -775,7 +1092,7 @@ function nameSprite(text,color){
 
 function sendState(){
   if(!channel) return;
-  channel.postMessage({type:'state', id:PLAYER_ID, color:myColor, name:myName,
+  channel.postMessage({type:'state', id:PLAYER_ID, color:myColor, headColor:myHeadColor, hat:myHat, name:myName,
     pos:[player.pos.x,player.pos.y,player.pos.z], yaw:player.yaw, health});
 }
 function sendBlockChange(x,y,z,block){
@@ -790,12 +1107,13 @@ if(channel){
     if(msg.type==='state'){
       let rp = remotePlayers[msg.id];
       if(!rp){
-        const mesh = makeAvatar(msg.color, msg.id);
+        const mesh = makeAvatar(msg.color, msg.headColor||msg.color, !!msg.hat, msg.id);
         mesh.add(nameSprite(msg.name||'Player','#'+msg.color.toString(16).padStart(6,'0')));
         const hb = createHealthBar();
         mesh.add(hb.sprite);
         scene.add(mesh);
-        rp = remotePlayers[msg.id] = {mesh, target:new THREE.Vector3(...msg.pos), yaw:msg.yaw, health:msg.health??MAX_HEALTH, hb, name:msg.name||'Player'};
+        rp = remotePlayers[msg.id] = {mesh, target:new THREE.Vector3(...msg.pos), yaw:msg.yaw, health:msg.health??MAX_HEALTH, hb,
+          name:msg.name||'Player', color:msg.color, headColor:msg.headColor||msg.color, hat:!!msg.hat};
         drawHealthBar(hb, rp.health);
       }
       rp.target.set(msg.pos[0],msg.pos[1],msg.pos[2]);
@@ -804,6 +1122,18 @@ if(channel){
       if(msg.health!==undefined && msg.health!==rp.health){
         rp.health = msg.health;
         drawHealthBar(rp.hb, rp.health);
+      }
+      if(msg.color!==undefined && msg.color!==rp.color){
+        rp.color = msg.color;
+        rp.mesh.userData.bodyMat.color.setHex(msg.color);
+      }
+      if(msg.headColor!==undefined && msg.headColor!==rp.headColor){
+        rp.headColor = msg.headColor;
+        rp.mesh.userData.headMat.color.setHex(msg.headColor);
+      }
+      if(msg.hat!==undefined && !!msg.hat!==rp.hat){
+        rp.hat = !!msg.hat;
+        setAvatarHat(rp.mesh, rp.hat, msg.id);
       }
       updatePlayersPanel();
     } else if(msg.type==='hit'){
@@ -817,11 +1147,11 @@ if(channel){
     } else if(msg.type==='chat'){
       appendChatMessage(msg.name||'Player', msg.color||0xffffff, msg.text||'');
     } else if(msg.type==='block'){
-      setBlock(msg.x,msg.y,msg.z,msg.block,false);
+      editBlock(msg.x,msg.y,msg.z,msg.block,true);
     } else if(msg.type==='hello'){
       channel.postMessage({type:'world-sync', diffs:diffLog});
     } else if(msg.type==='world-sync'){
-      msg.diffs.forEach(d=>setBlock(d.x,d.y,d.z,d.block,false));
+      msg.diffs.forEach(d=>editBlock(d.x,d.y,d.z,d.block,true));
     }
   };
 }
@@ -907,6 +1237,7 @@ bindHold('mbreak', ()=>tryBreak());
 bindHold('mplace', ()=>tryPlace());
 bindHold('minv', ()=>{ if(overlay.style.display==='flex') closeCraft(); else openCraft(); });
 bindHold('mchat', ()=>{ if(chatOpen) closeChat(true); else openChat(); });
+bindHold('mcustom', ()=>{ if(customOverlay.style.display==='flex') closeCustomize(true); else openCustomize(); });
 
 // ---------------- main loop ----------------
 let last = performance.now();
@@ -915,10 +1246,11 @@ function animate(){
   const now = performance.now();
   const dt = Math.min((now-last)/1000, 0.05);
   last = now;
-  if(overlay.style.display!=='flex'){
+  if(overlay.style.display!=='flex' && customOverlay.style.display!=='flex'){
     updatePlayer(dt);
   }
   updateRemote();
+  updateMobs(dt);
   renderer.render(scene, camera);
 }
 animate();

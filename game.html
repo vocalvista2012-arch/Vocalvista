@@ -65,6 +65,38 @@
   }
   body.touch-mode #chat-log,body.touch-mode #chat-input-row{bottom:auto;top:170px;left:8px;width:min(300px,60vw);}
 
+  #room-overlay{
+    position:absolute;inset:0;background:rgba(6,9,16,0.94);display:flex;
+    align-items:center;justify-content:center;z-index:50;
+  }
+  #room-panel{
+    width:380px;max-width:90vw;background:#141a28;border:1px solid var(--border);
+    border-radius:14px;padding:24px;color:var(--text);text-align:center;
+  }
+  #room-panel h2{margin:0 0 4px;color:var(--accent2);font-size:20px;}
+  #room-panel p.sub{color:var(--muted);font-size:12px;margin:0 0 18px;line-height:1.5;}
+  #room-panel label{display:block;text-align:left;font-size:11px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+  #mode-toggle{display:flex;gap:8px;margin-bottom:18px;}
+  .mode-btn{
+    flex:1;padding:11px 8px;border-radius:8px;border:1px solid var(--border);
+    background:#0f1420;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;
+  }
+  .mode-btn.selected{border-color:var(--accent);color:var(--accent);background:#132420;}
+  #room-code-wrap{display:block;}
+  #room-panel input{
+    width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--border);
+    background:#0f1420;color:var(--text);font-size:14px;outline:none;margin-bottom:14px;
+  }
+  #room-code{border-color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-weight:700;}
+  #room-hint{color:var(--muted);font-size:11px;margin:-8px 0 16px;text-align:left;}
+  #room-join{
+    width:100%;background:var(--accent);border:none;border-radius:8px;padding:11px;
+    font-weight:700;font-size:14px;color:#0a1a14;cursor:pointer;
+  }
+  #room-join:disabled{background:#2a3450;color:#5a637d;cursor:not-allowed;}
+  #room-status{color:var(--muted);font-size:12px;margin:12px 0 0;min-height:16px;}
+  #net-badge{color:var(--accent);}
   #lock-hint{
     position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     background:rgba(10,14,24,0.55);color:var(--text);font-size:20px;text-align:center;
@@ -173,6 +205,26 @@
 </head>
 <body>
 
+<div id="room-overlay">
+  <div id="room-panel">
+    <h2>🧱 Vistacraft Online</h2>
+    <p class="sub">Real multiplayer over the internet — everyone who enters the same room code joins the same world, from any computer. Or play solo.</p>
+    <div id="mode-toggle">
+      <button type="button" class="mode-btn selected" id="mode-single">🧍 Singleplayer</button>
+      <button type="button" class="mode-btn" id="mode-multi">👥 Multiplayer</button>
+    </div>
+    <label>Your name</label>
+    <input id="room-name" maxlength="16" autocomplete="off">
+    <div id="room-code-wrap" style="display:none;">
+      <label>Room code</label>
+      <input id="room-code" maxlength="20" autocomplete="off">
+      <p id="room-hint">Share this code with friends so they join you. Change it to join someone else's room instead.</p>
+    </div>
+    <button id="room-join">Start Game</button>
+    <p id="room-status"></p>
+  </div>
+</div>
+
 <div id="lock-hint">
   <div>🧱 <span>Vistacraft</span></div>
   <div>Click to play (mouse look locks to game)</div>
@@ -192,8 +244,8 @@
 
 <div id="top-panels">
   <div id="status">
-    <b>Blockcraft</b> — local multiplayer over BroadcastChannel<br>
-    Open this file in multiple tabs to build together in the same world.
+    <b>Blockcraft</b> — online multiplayer (WebRTC)<br>
+    Room: <span id="room-badge">—</span> · <span id="net-badge"></span>
   </div>
   <div id="players-panel">
     <h4>Players</h4>
@@ -244,6 +296,7 @@
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js"></script>
 <script>
 /* =========================================================
    BLOCKCRAFT — a compact Minecraft-style voxel game.
@@ -757,10 +810,6 @@ window.addEventListener('keydown', e=>{
   }
 });
 let myName = 'Guest'+Math.floor(Math.random()*1000);
-try{
-  const entered = prompt('Enter your player name:', myName);
-  if(entered && entered.trim()) myName = entered.trim().slice(0,16);
-}catch(e){ /* prompt blocked — keep default guest name */ }
 
 const player = {
   pos: new THREE.Vector3(0.5, heightAt(0,0)+3, 0.5),
@@ -852,7 +901,7 @@ function tryAttack(){
   if(hitObj.userData.ownerId){
     if(now - lastAttack < ATTACK_COOLDOWN) return true;
     lastAttack = now;
-    if(channel) channel.postMessage({type:'hit', target:hitObj.userData.ownerId, from:PLAYER_ID, damage:ATTACK_DAMAGE});
+    broadcast({type:'hit', target:hitObj.userData.ownerId, from:PLAYER_ID, damage:ATTACK_DAMAGE});
     return true;
   }
   if(hitObj.userData.mobId){
@@ -1007,7 +1056,7 @@ function sendChat(text){
   text = text.trim();
   if(!text) return;
   appendChatMessage(myName, myColor, text);
-  if(channel) channel.postMessage({type:'chat', id:PLAYER_ID, name:myName, color:myColor, text});
+  broadcast({type:'chat', id:PLAYER_ID, name:myName, color:myColor, text});
 }
 
 const chatInputEl = document.getElementById('chat-input');
@@ -1036,8 +1085,6 @@ window.addEventListener('keydown', e=>{
   if(chatOpen) return;
   if(e.code==='Enter'){ e.preventDefault(); openChat(); }
 });
-let channel = null;
-try{ channel = new BroadcastChannel('blockcraft-world'); }catch(e){}
 const remotePlayers = {};
 
 function makeAvatar(bodyColor, headColor, hasHat, ownerId){
@@ -1094,70 +1141,189 @@ function nameSprite(text,color){
 }
 
 function sendState(){
-  if(!channel) return;
-  channel.postMessage({type:'state', id:PLAYER_ID, color:myColor, headColor:myHeadColor, hat:myHat, name:myName,
+  broadcast({type:'state', id:PLAYER_ID, color:myColor, headColor:myHeadColor, hat:myHat, name:myName,
     pos:[player.pos.x,player.pos.y,player.pos.z], yaw:player.yaw, health});
 }
 function sendBlockChange(x,y,z,block){
-  if(!channel) return;
-  channel.postMessage({type:'block', x,y,z,block});
+  broadcast({type:'block', x,y,z,block});
 }
-if(channel){
-  channel.postMessage({type:'hello', id:PLAYER_ID});
-  channel.onmessage = ev=>{
-    const msg = ev.data;
-    if(msg.id===PLAYER_ID) return;
-    if(msg.type==='state'){
-      let rp = remotePlayers[msg.id];
-      if(!rp){
-        const mesh = makeAvatar(msg.color, msg.headColor||msg.color, !!msg.hat, msg.id);
-        mesh.add(nameSprite(msg.name||'Player','#'+msg.color.toString(16).padStart(6,'0')));
-        const hb = createHealthBar();
-        mesh.add(hb.sprite);
-        scene.add(mesh);
-        rp = remotePlayers[msg.id] = {mesh, target:new THREE.Vector3(...msg.pos), yaw:msg.yaw, health:msg.health??MAX_HEALTH, hb,
-          name:msg.name||'Player', color:msg.color, headColor:msg.headColor||msg.color, hat:!!msg.hat};
-        drawHealthBar(hb, rp.health);
-      }
-      rp.target.set(msg.pos[0],msg.pos[1],msg.pos[2]);
-      rp.yaw = msg.yaw;
-      rp.lastSeen = performance.now();
-      if(msg.health!==undefined && msg.health!==rp.health){
-        rp.health = msg.health;
-        drawHealthBar(rp.hb, rp.health);
-      }
-      if(msg.color!==undefined && msg.color!==rp.color){
-        rp.color = msg.color;
-        rp.mesh.userData.bodyMat.color.setHex(msg.color);
-      }
-      if(msg.headColor!==undefined && msg.headColor!==rp.headColor){
-        rp.headColor = msg.headColor;
-        rp.mesh.userData.headMat.color.setHex(msg.headColor);
-      }
-      if(msg.hat!==undefined && !!msg.hat!==rp.hat){
-        rp.hat = !!msg.hat;
-        setAvatarHat(rp.mesh, rp.hat, msg.id);
-      }
-      updatePlayersPanel();
-    } else if(msg.type==='hit'){
-      if(msg.target===PLAYER_ID){
-        health = Math.max(0, health - msg.damage);
-        renderHearts();
-        showDamageFlash();
-        if(health<=0) respawnPlayer();
-        else sendState();
-      }
-    } else if(msg.type==='chat'){
-      appendChatMessage(msg.name||'Player', msg.color||0xffffff, msg.text||'');
-    } else if(msg.type==='block'){
-      editBlock(msg.x,msg.y,msg.z,msg.block,true);
-    } else if(msg.type==='hello'){
-      channel.postMessage({type:'world-sync', diffs:diffLog});
-    } else if(msg.type==='world-sync'){
-      msg.diffs.forEach(d=>editBlock(d.x,d.y,d.z,d.block,true));
+// ---------------- online networking (WebRTC via PeerJS) ----------------
+// Everyone who enters the same room code joins the same session, from any
+// computer anywhere. The first person in a room becomes its "host": their
+// PeerJS id IS the room code, so everyone else's browser connects straight
+// to them. The host relays every message to all other connected players
+// (a small star network) and is the authority for late-joiners' world sync.
+// No server or account needed — PeerJS's public signaling service just
+// helps browsers find each other; actual game data flows peer-to-peer.
+let isHost = false;
+let hostConn = null;               // client's connection to the host
+const connections = new Map();     // host's connections, peerId -> DataConnection
+let netReady = false;
+
+function handleIncoming(msg){
+  if(msg.id===PLAYER_ID) return;
+  if(msg.type==='state'){
+    let rp = remotePlayers[msg.id];
+    if(!rp){
+      const mesh = makeAvatar(msg.color, msg.headColor||msg.color, !!msg.hat, msg.id);
+      mesh.add(nameSprite(msg.name||'Player','#'+msg.color.toString(16).padStart(6,'0')));
+      const hb = createHealthBar();
+      mesh.add(hb.sprite);
+      scene.add(mesh);
+      rp = remotePlayers[msg.id] = {mesh, target:new THREE.Vector3(...msg.pos), yaw:msg.yaw, health:msg.health??MAX_HEALTH, hb,
+        name:msg.name||'Player', color:msg.color, headColor:msg.headColor||msg.color, hat:!!msg.hat};
+      drawHealthBar(hb, rp.health);
     }
-  };
+    rp.target.set(msg.pos[0],msg.pos[1],msg.pos[2]);
+    rp.yaw = msg.yaw;
+    rp.lastSeen = performance.now();
+    if(msg.health!==undefined && msg.health!==rp.health){
+      rp.health = msg.health;
+      drawHealthBar(rp.hb, rp.health);
+    }
+    if(msg.color!==undefined && msg.color!==rp.color){
+      rp.color = msg.color;
+      rp.mesh.userData.bodyMat.color.setHex(msg.color);
+    }
+    if(msg.headColor!==undefined && msg.headColor!==rp.headColor){
+      rp.headColor = msg.headColor;
+      rp.mesh.userData.headMat.color.setHex(msg.headColor);
+    }
+    if(msg.hat!==undefined && !!msg.hat!==rp.hat){
+      rp.hat = !!msg.hat;
+      setAvatarHat(rp.mesh, rp.hat, msg.id);
+    }
+    updatePlayersPanel();
+  } else if(msg.type==='hit'){
+    if(msg.target===PLAYER_ID){
+      health = Math.max(0, health - msg.damage);
+      renderHearts();
+      showDamageFlash();
+      if(health<=0) respawnPlayer();
+      else sendState();
+    }
+  } else if(msg.type==='chat'){
+    appendChatMessage(msg.name||'Player', msg.color||0xffffff, msg.text||'');
+  } else if(msg.type==='block'){
+    editBlock(msg.x,msg.y,msg.z,msg.block,true);
+  } else if(msg.type==='world-sync'){
+    msg.diffs.forEach(d=>editBlock(d.x,d.y,d.z,d.block,true));
+  }
 }
+
+// sends one message to every other player, whether we're the host (direct fan-out)
+// or a regular client (single hop to the host, who relays it onward)
+function broadcast(msg){
+  if(!netReady) return;
+  if(isHost){
+    for(const c of connections.values()) if(c.open) c.send(msg);
+  } else if(hostConn && hostConn.open){
+    hostConn.send(msg);
+  }
+}
+function updateConnCount(){
+  const badge = document.getElementById('net-badge');
+  if(!badge) return;
+  if(isHost){
+    const n = connections.size;
+    badge.textContent = `Hosting · ${n} other player${n===1?'':'s'} connected`;
+  } else {
+    badge.textContent = hostConn && hostConn.open ? 'Connected to host' : 'Connecting…';
+  }
+}
+function setupHostConnection(conn){
+  conn.on('open', ()=>{
+    connections.set(conn.peer, conn);
+    conn.send({type:'world-sync', diffs:diffLog});
+    updateConnCount();
+  });
+  conn.on('data', msg=>{
+    handleIncoming(msg);
+    for(const [id,c] of connections) if(id!==conn.peer && c.open) c.send(msg);
+  });
+  conn.on('close', ()=>{ connections.delete(conn.peer); updateConnCount(); });
+}
+function joinAsClient(roomId){
+  const peer = new Peer(undefined, {debug:0});
+  peer.on('open', ()=>{
+    const conn = peer.connect(roomId, {reliable:true});
+    hostConn = conn;
+    conn.on('open', ()=>{
+      isHost = false; netReady = true;
+      finishJoin(roomId);
+    });
+    conn.on('data', msg=>handleIncoming(msg));
+    conn.on('close', ()=>{
+      showToast('⚠️ Lost connection to host — reload to reconnect');
+      updateConnCount();
+    });
+  });
+  peer.on('error', err=>{
+    document.getElementById('room-status').textContent = 'Could not join room ('+err.type+'). Try again.';
+    document.getElementById('room-join').disabled = false;
+  });
+}
+function startNetworking(roomId){
+  const hostPeer = new Peer(roomId, {debug:0});
+  hostPeer.on('open', ()=>{
+    isHost = true; netReady = true;
+    hostPeer.on('connection', conn=>setupHostConnection(conn));
+    finishJoin(roomId);
+  });
+  hostPeer.on('error', err=>{
+    if(err.type==='unavailable-id'){
+      hostPeer.destroy();
+      joinAsClient(roomId);
+    } else {
+      document.getElementById('room-status').textContent = 'Connection error ('+err.type+'). Try again.';
+      document.getElementById('room-join').disabled = false;
+    }
+  });
+}
+function finishJoin(roomId){
+  document.getElementById('room-overlay').style.display = 'none';
+  document.getElementById('room-badge').textContent = roomId.replace('blockcraft-room-','');
+  updateConnCount();
+}
+
+const roomNameEl = document.getElementById('room-name');
+const roomCodeEl = document.getElementById('room-code');
+const roomCodeWrap = document.getElementById('room-code-wrap');
+const roomJoinBtn = document.getElementById('room-join');
+const modeSingleBtn = document.getElementById('mode-single');
+const modeMultiBtn = document.getElementById('mode-multi');
+roomNameEl.value = myName;
+roomCodeEl.value = Math.random().toString(36).slice(2,6).toUpperCase();
+
+let playMode = 'single';
+function setMode(mode){
+  playMode = mode;
+  modeSingleBtn.classList.toggle('selected', mode==='single');
+  modeMultiBtn.classList.toggle('selected', mode==='multi');
+  roomCodeWrap.style.display = mode==='multi' ? 'block' : 'none';
+  roomJoinBtn.textContent = mode==='multi' ? 'Join World' : 'Start Game';
+}
+modeSingleBtn.addEventListener('click', ()=>setMode('single'));
+modeMultiBtn.addEventListener('click', ()=>setMode('multi'));
+setMode('single');
+
+roomJoinBtn.addEventListener('click', ()=>{
+  const nm = roomNameEl.value.trim();
+  if(nm) myName = nm.slice(0,16);
+  if(playMode==='single'){
+    document.getElementById('room-overlay').style.display = 'none';
+    document.getElementById('room-badge').textContent = 'Singleplayer';
+    document.getElementById('net-badge').textContent = 'Offline — solo world';
+    return; // netReady stays false: broadcast() is a no-op, no network created at all
+  }
+  const code = roomCodeEl.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'') || 'PUBLIC';
+  document.getElementById('room-status').textContent = 'Connecting…';
+  roomJoinBtn.disabled = true;
+  startNetworking('blockcraft-room-'+code);
+});
+roomCodeEl.addEventListener('keydown', e=>{ e.stopPropagation(); if(e.code==='Enter') document.getElementById('room-join').click(); });
+roomNameEl.addEventListener('keydown', e=>{ e.stopPropagation(); if(e.code==='Enter') document.getElementById('room-join').click(); });
+
 setInterval(sendState, 66);
 setInterval(()=>{
   const now=performance.now();

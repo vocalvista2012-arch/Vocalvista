@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Blockcraft — Voxel World Multiplayer</title>
+<title>Vistacraft — Voxel World Multiplayer</title>
 <style>
   :root{
     --panel:#1a1f2ecc; --border:#3a4668; --text:#e8ecf3; --muted:#9aa3ba;
@@ -174,7 +174,7 @@
 <body>
 
 <div id="lock-hint">
-  <div>🧱 <span>Blockcraft</span></div>
+  <div>🧱 <span>Vistacraft</span></div>
   <div>Click to play (mouse look locks to game)</div>
   <small>WASD move · Space jump · Left-click break/hit · Right-click place · 1-9 hotbar · E crafting · Enter to chat · C to customize</small>
 </div>
@@ -954,8 +954,11 @@ let touchYawEl = {id:null,lastX:0,lastY:0};
 let touchBreakHeld=false, touchPlaceHeld=false, touchJump=false;
 
 function updatePlayer(dt){
-  const forward = new THREE.Vector3(Math.sin(player.yaw),0,Math.cos(player.yaw));
-  const right = new THREE.Vector3(Math.cos(player.yaw),0,-Math.sin(player.yaw));
+  // forward/right derived straight from the camera's own facing direction so movement
+  // always matches what you're actually looking at (previously these were inverted,
+  // which made W move you backward relative to your view).
+  const forward = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+  const right = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
   let move = new THREE.Vector3();
   if(keys['KeyW']) move.add(forward);
   if(keys['KeyS']) move.sub(forward);

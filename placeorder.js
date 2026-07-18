@@ -42,17 +42,18 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   try {
 
     await addDoc(collection(db, "orders"), {
-      userEmail: user.email,
-      name: name,
-      phone: phone,
-      service: service,
-      description: description,
-      status: "Pending",
-      price: "",
-      deliveryLink: "",
-      reviewGiven: false,
-      createdAt: serverTimestamp()
-    });
+  userId: user.uid,
+  userEmail: user.email,
+  name: name,
+  phone: phone,
+  service: service,
+  description: description,
+  status: "Pending",
+  price: "",
+  deliveryLink: "",
+  reviewGiven: false,
+  createdAt: serverTimestamp()
+});
 
     alert("Order submitted successfully!");
 

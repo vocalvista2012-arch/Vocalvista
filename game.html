@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Vistacraft — Voxel World Multiplayer</title>
+<title>Blockcraft — Voxel World Multiplayer</title>
 <style>
   :root{
     --panel:#1a1f2ecc; --border:#3a4668; --text:#e8ecf3; --muted:#9aa3ba;
@@ -78,6 +78,7 @@
   #room-panel label{display:block;text-align:left;font-size:11px;color:var(--muted);
     text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
   #mode-toggle{display:flex;gap:8px;margin-bottom:18px;}
+  .mode-toggle-row{display:flex;gap:8px;margin-bottom:18px;}
   .mode-btn{
     flex:1;padding:11px 8px;border-radius:8px;border:1px solid var(--border);
     background:#0f1420;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;
@@ -145,9 +146,12 @@
   #craft-panel p.sub{margin:0 0 16px;color:var(--muted);font-size:12px;}
   .inv-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin-bottom:18px;}
   .inv-cell{aspect-ratio:1;border-radius:6px;background:#0f1420;border:1px solid #2a3450;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:var(--muted);position:relative;}
-  .inv-cell .swatch{width:60%;height:45%;border-radius:3px;}
-  .inv-cell .count{position:absolute;bottom:2px;right:3px;font-size:9px;color:var(--text);}
+    display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:var(--muted);position:relative;cursor:pointer;}
+  .inv-cell:hover{border-color:var(--accent);}
+  .inv-cell .swatch{width:70%;height:70%;border-radius:3px;}
+  .inv-cell .count{position:absolute;bottom:2px;right:3px;font-size:10px;color:var(--text);font-weight:700;text-shadow:0 0 3px #000;}
+  .inv-cell.hotbar-cell{margin-top:8px;border-color:#3a4668;}
+  .inv-cell.selected-cell{border-color:var(--accent);box-shadow:0 0 6px #7ef2d199;}
   .recipe{
     display:flex;align-items:center;gap:12px;background:#0f1420;border:1px solid #232c44;
     border-radius:10px;padding:10px 12px;margin-bottom:8px;
@@ -196,6 +200,7 @@
     background:rgba(20,26,42,0.6);border:2px solid var(--border);color:var(--text);
     font-size:11px;font-weight:700;pointer-events:auto;display:flex;align-items:center;justify-content:center;}
   #mjump{bottom:calc(180px + env(safe-area-inset-bottom));}
+  #mdown{bottom:calc(180px + env(safe-area-inset-bottom));right:104px;background:rgba(160,160,255,0.25);}
   #mbreak{bottom:calc(104px + env(safe-area-inset-bottom));background:rgba(255,110,90,0.35);}
   #mplace{bottom:calc(24px + env(safe-area-inset-bottom));background:rgba(126,242,209,0.3);}
   #minv{top:auto;right:16px;bottom:auto;width:52px;height:52px;font-size:10px;}
@@ -207,7 +212,7 @@
 
 <div id="room-overlay">
   <div id="room-panel">
-    <h2>🧱 Vistacraft Online</h2>
+    <h2>🧱 Blockcraft Online</h2>
     <p class="sub">Real multiplayer over the internet — everyone who enters the same room code joins the same world, from any computer. Or play solo.</p>
     <div id="mode-toggle">
       <button type="button" class="mode-btn selected" id="mode-single">🧍 Singleplayer</button>
@@ -215,6 +220,11 @@
     </div>
     <label>Your name</label>
     <input id="room-name" maxlength="16" autocomplete="off">
+    <label>Game mode</label>
+    <div id="gm-toggle" class="mode-toggle-row">
+      <button type="button" class="mode-btn selected" id="gm-survival">❤️ Survival</button>
+      <button type="button" class="mode-btn" id="gm-creative">🪽 Creative</button>
+    </div>
     <div id="room-code-wrap" style="display:none;">
       <label>Room code</label>
       <input id="room-code" maxlength="20" autocomplete="off">
@@ -226,9 +236,9 @@
 </div>
 
 <div id="lock-hint">
-  <div>🧱 <span>Vistacraft</span></div>
+  <div>🧱 <span>Blockcraft</span></div>
   <div>Click to play (mouse look locks to game)</div>
-  <small>WASD move · Space jump · Left-click break/hit · Right-click place · 1-9 hotbar · E crafting · Enter to chat · C to customize</small>
+  <small>WASD move · Space jump · Left-click break/hit · Right-click place · 1-9 hotbar · E inventory &amp; crafting · Enter to chat · C to customize<br>Craft a pickaxe to mine stone, an axe for wood, and a sword for combat</small>
 </div>
 
 <div id="crosshair"></div>
@@ -258,8 +268,8 @@
 <div id="craft-overlay">
   <div id="craft-panel">
     <button id="craft-close">✕</button>
-    <h2>Crafting Table</h2>
-    <p class="sub">Your inventory</p>
+    <h2>Inventory &amp; Crafting</h2>
+    <p class="sub">Backpack above, hotbar below (highlighted) — click a backpack item to swap it into your selected hotbar slot</p>
     <div class="inv-grid" id="inv-grid"></div>
     <p class="sub">Recipes</p>
     <div id="recipe-list"></div>
@@ -287,6 +297,7 @@
 <div id="mobile-controls">
   <div id="joystick-base"><div id="joystick-stick"></div></div>
   <button class="mbtn" id="mjump">JUMP</button>
+  <button class="mbtn" id="mdown" style="display:none;">DOWN</button>
   <button class="mbtn" id="mbreak">BREAK</button>
   <button class="mbtn" id="mplace">PLACE</button>
   <button class="mbtn" id="minv">CRAFT</button>
@@ -319,6 +330,10 @@ const BLOCKS = {
   coal_ore:{color:0x33363d, placeable:true},
   crafting_table:{color:0xa9702f, placeable:true},
   torch:   {color:0xffcf6b, placeable:true, emissive:0xff9900, scale:[0.3,0.6,0.3], yOff:-0.2},
+  sand:    {color:0xe0d28c, placeable:true},
+  snow:    {color:0xf5f9fc, placeable:true},
+  cactus:  {color:0x3f7d3a, placeable:true},
+  water:   {color:0x3fa1f5, placeable:false, nonSolid:true, transparent:true},
 };
 // non-block inventory items (crafted, no world mesh)
 const ITEMS = {
@@ -329,6 +344,23 @@ const ITEMS = {
   raw_porkchop: {color:0xffb3b3},
   raw_chicken: {color:0xffe0b3},
 };
+// ---------------- tools ----------------
+// kind = job (pickaxe/axe/shovel/sword), tier = material rank (drives color/icon),
+// dmg = melee damage dealt while a sword is the selected hotbar item.
+const TOOLS = {
+  wood_pickaxe:  {kind:'pickaxe', tier:1, color:0xc19a6b},
+  stone_pickaxe: {kind:'pickaxe', tier:2, color:0x9098a0},
+  wood_axe:      {kind:'axe',     tier:1, color:0xc19a6b},
+  stone_axe:     {kind:'axe',     tier:2, color:0x9098a0},
+  wood_shovel:   {kind:'shovel',  tier:1, color:0xc19a6b},
+  stone_shovel:  {kind:'shovel',  tier:2, color:0x9098a0},
+  wood_sword:    {kind:'sword',   tier:1, dmg:3, color:0xc19a6b},
+  stone_sword:   {kind:'sword',   tier:2, dmg:4, color:0x9098a0},
+};
+// which tool "kind" is needed to actually collect a drop from a block (you can still break
+// these blocks bare-handed like vanilla, they just won't pop off an item without the tool)
+const NEEDS_PICKAXE = new Set(['stone','coal_ore']);
+Object.assign(ITEMS, TOOLS);
 const SWATCH = {...Object.fromEntries(Object.entries(BLOCKS).map(([k,v])=>[k,v.color])),
                 ...Object.fromEntries(Object.entries(ITEMS).map(([k,v])=>[k,v.color]))};
 
@@ -337,15 +369,26 @@ const RECIPES = [
   {need:[['planks',2]], out:['stick',4], label:'4 Sticks'},
   {need:[['planks',4]], out:['crafting_table',1], label:'1 Crafting Table'},
   {need:[['coal',1],['stick',1]], out:['torch',4], label:'4 Torches'},
+  {need:[['planks',3],['stick',2]], out:['wood_pickaxe',1], label:'1 Wood Pickaxe'},
+  {need:[['planks',3],['stick',2]], out:['wood_axe',1], label:'1 Wood Axe'},
+  {need:[['planks',1],['stick',2]], out:['wood_shovel',1], label:'1 Wood Shovel'},
+  {need:[['planks',2],['stick',1]], out:['wood_sword',1], label:'1 Wood Sword'},
+  {need:[['stone',3],['stick',2]], out:['stone_pickaxe',1], label:'1 Stone Pickaxe'},
+  {need:[['stone',3],['stick',2]], out:['stone_axe',1], label:'1 Stone Axe'},
+  {need:[['stone',1],['stick',2]], out:['stone_shovel',1], label:'1 Stone Shovel'},
+  {need:[['stone',2],['stick',1]], out:['stone_sword',1], label:'1 Stone Sword'},
 ];
 
 // ---------------- mobs ----------------
 const MOB_TYPES = {
-  sheep:   {body:0xf2f2ea, head:0xf2f2ea, leg:0x3a3a3a, size:[0.7,0.5,0.5], speed:1.0, maxHealth:8},
-  cow:     {body:0x6b4423, head:0x3a2a1a, leg:0x2a1f15, size:[0.9,0.6,0.55], speed:0.9, maxHealth:10},
-  pig:     {body:0xf7b6c2, head:0xf2a0b0, leg:0xd98fa0, size:[0.7,0.45,0.5], speed:1.1, maxHealth:8},
-  chicken: {body:0xffffff, head:0xffffff, leg:0xffcc33, size:[0.4,0.35,0.3], speed:1.4, maxHealth:4},
+  sheep:   {body:0xf2f2ea, head:0xf2f2ea, leg:0x3a3a3a, size:[0.7,0.5,0.5], speed:1.0, maxHealth:8, legs:4},
+  cow:     {body:0x6b4423, head:0x3a2a1a, leg:0x2a1f15, size:[0.9,0.6,0.55], speed:0.9, maxHealth:10, legs:4},
+  pig:     {body:0xf7b6c2, head:0xf2a0b0, leg:0xd98fa0, size:[0.7,0.45,0.5], speed:1.1, maxHealth:8, legs:4},
+  chicken: {body:0xffffff, head:0xffffff, leg:0xffcc33, size:[0.4,0.35,0.3], speed:1.4, maxHealth:4, legs:4},
+  villager:   {body:0x8a6a4a, head:0xe0b48c, leg:0x5c4632, size:[0.5,0.9,0.35], speed:0.7, maxHealth:10, legs:2},
+  iron_golem: {body:0xc7cdd6, head:0xb0b8c4, leg:0x8a919e, size:[1.1,1.6,0.7], speed:0.55, maxHealth:40, legs:2},
 };
+const ANIMAL_TYPES = ['sheep','cow','pig','chicken']; // roam wild on grass, unlike villagers/golems
 const MOB_DROPS = {sheep:'wool', cow:'raw_beef', pig:'raw_porkchop', chicken:'raw_chicken'};
 
 // ---------------- deterministic world generation ----------------
@@ -358,7 +401,25 @@ function noise2D(x,y){
   const a=hash2(xi,yi), b=hash2(xi+1,yi), c=hash2(xi,yi+1), d=hash2(xi+1,yi+1);
   return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;
 }
-function heightAt(x,z){ return 4 + Math.floor(noise2D(x*0.11, z*0.11)*7); }
+// ---------------- biomes & rivers ----------------
+// large-scale noise picks a biome per region; a separate noise field carves winding rivers
+// through any biome (a thin band where the noise value crosses close to 0.5)
+function biomeAt(x,z){
+  const t = noise2D(x*0.008+300, z*0.008+300);
+  if(t < 0.32) return 'desert';
+  if(t > 0.68) return 'mountain';
+  return 'plains';
+}
+function isRiver(x,z){
+  const rv = noise2D(x*0.015+900, z*0.015+900);
+  return Math.abs(rv-0.5) < 0.028;
+}
+function heightAt(x,z){
+  const biome = biomeAt(x,z);
+  if(biome==='desert') return 3 + Math.floor(noise2D(x*0.09, z*0.09)*4);
+  if(biome==='mountain') return 10 + Math.floor(noise2D(x*0.07, z*0.07)*22);
+  return 4 + Math.floor(noise2D(x*0.11, z*0.11)*7);
+}
 
 // ---------------- infinite chunked world ----------------
 const CHUNK_SIZE = 16;      // blocks per chunk side (x/z)
@@ -386,18 +447,30 @@ function generateChunkTerrain(cx,cz){
   const ch = ensureChunk(cx,cz);
   if(ch.terrainDone) return;
   const x0=cx*CHUNK_SIZE, z0=cz*CHUNK_SIZE;
+  let anyPlains = false;
   for(let lx=0; lx<CHUNK_SIZE; lx++){
     for(let lz=0; lz<CHUNK_SIZE; lz++){
       const x=x0+lx, z=z0+lz;
-      const h = heightAt(x,z);
+      const biome = biomeAt(x,z);
+      if(biome==='plains') anyPlains = true;
+      const river = isRiver(x,z);
+      let h = heightAt(x,z);
+      if(river) h = Math.max(h-3, 2);
+      const isSnowCap = biome==='mountain' && h>=24;
+      const surface = river ? 'sand' : biome==='desert' ? 'sand' : isSnowCap ? 'snow' : 'grass';
+      const subSurface = biome==='desert' ? 'sand' : 'dirt';
       for(let y=0;y<=h;y++){
         let t;
-        if(y===h) t='grass';
-        else if(y>=h-2) t='dirt';
+        if(y===h) t=surface;
+        else if(y>=h-2) t=subSurface;
         else t = (hash2(x*13.7+1,y*7.3+z*5.1) < 0.055) ? 'coal_ore' : 'stone';
         setTerrainBlock(x,y,z,t);
       }
-      if(hash2(x*3.1,z*7.2) < 0.035){
+      if(river){
+        for(let wy=h+1; wy<=h+3; wy++) setTerrainBlock(x,wy,z,'water');
+        continue; // no trees/cacti/village on river tiles
+      }
+      if(biome==='plains' && hash2(x*3.1,z*7.2) < 0.035){
         const th = 3+Math.floor(hash2(x*9.3,z*2.1)*2);
         for(let i=1;i<=th;i++) setTerrainBlock(x,h+i,z,'wood_log');
         for(let lx2=-2;lx2<=2;lx2++)for(let lz2=-2;lz2<=2;lz2++)for(let ly2=-1;ly2<=1;ly2++){
@@ -405,16 +478,58 @@ function generateChunkTerrain(cx,cz){
             setTerrainBlock(x+lx2, h+th+ly2, z+lz2, 'leaves');
           }
         }
+      } else if(biome==='desert' && hash2(x*4.1,z*8.2) < 0.02){
+        const ch2 = 2+Math.floor(hash2(x*6.6,z*2.2)*2);
+        for(let i=1;i<=ch2;i++) setTerrainBlock(x,h+i,z,'cactus');
       }
     }
   }
+  if(anyPlains) maybeGenerateVillage(cx,cz);
   ch.terrainDone = true;
+}
+
+// ---------------- villages ----------------
+const villageChunks = new Set();
+function buildHouse(hx,hz){
+  const w=5,d=5,wallH=3;
+  for(let lx=0; lx<w; lx++) for(let lz=0; lz<d; lz++){
+    const x=hx+lx-2, z=hz+lz-2;
+    const baseH = heightAt(x,z);
+    setTerrainBlock(x, baseH, z, 'planks');
+    const isEdge = (lx===0||lx===w-1||lz===0||lz===d-1);
+    const isDoor = (lz===0 && lx===2);
+    if(isEdge && !isDoor){
+      for(let wy=1; wy<=wallH; wy++) setTerrainBlock(x, baseH+wy, z, 'planks');
+    }
+  }
+  for(let lx=-1; lx<=w; lx++) for(let lz=-1; lz<=d; lz++){
+    const x=hx+lx-2, z=hz+lz-2;
+    const baseH = heightAt(x,z);
+    setTerrainBlock(x, baseH+wallH+1, z, 'wood_log');
+  }
+}
+function maybeGenerateVillage(cx,cz){
+  const roll = hash2(cx*41.3+7, cz*23.7+11);
+  if(roll > 0.05) return;
+  if(biomeAt(cx*CHUNK_SIZE+8, cz*CHUNK_SIZE+8) !== 'plains') return;
+  const cxCenter = cx*CHUNK_SIZE+8, czCenter = cz*CHUNK_SIZE+8;
+  const houseCount = 2+Math.floor(hash2(cx*3+1,cz*5+2)*3);
+  for(let i=0;i<houseCount;i++){
+    const angle = (i/houseCount)*Math.PI*2 + hash2(cx*7+i,cz*9+i);
+    const dist = 5+hash2(cx*2+i,cz*3+i)*4;
+    buildHouse(Math.round(cxCenter+Math.cos(angle)*dist), Math.round(czCenter+Math.sin(angle)*dist));
+  }
+  villageChunks.add(chunkKey(cx,cz));
 }
 function getBlock(x,y,z){
   const ch = chunks.get(chunkKey(chunkOf(x),chunkOf(z)));
   return ch ? ch.blocks.get(key(x,y,z)) : undefined;
 }
-function isSolid(x,y,z){ return !!getBlock(x,y,z); }
+function isSolid(x,y,z){
+  const t = getBlock(x,y,z);
+  if(!t) return false;
+  return !(BLOCKS[t] && BLOCKS[t].nonSolid);
+}
 
 // diff log for multiplayer late-join sync: records every edit since the session started
 const diffLog = []; // {x,y,z,block|null}
@@ -441,14 +556,256 @@ sun.shadow.camera.left=-40; sun.shadow.camera.right=40; sun.shadow.camera.top=40
 scene.add(sun);
 scene.add(new THREE.HemisphereLight(0xbfe0ff, 0x445533, 0.6));
 
+// ---------------- clouds ----------------
+// A single tiled, semi-transparent texture layer high overhead, Minecraft-style — it's kept
+// centered above the player every frame so it always reads as an endless field of clouds,
+// and its texture offset drifts slowly for gentle motion.
+function buildCloudTexture(){
+  const size = 256;
+  const cvs = document.createElement('canvas'); cvs.width = size; cvs.height = size;
+  const ctx = cvs.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  let s = 777;
+  const rnd = ()=>{ s=(s*9301+49297)%233280; return s/233280; };
+  const cell = 16;
+  for(let gy=0; gy<size; gy+=cell){
+    for(let gx=0; gx<size; gx+=cell){
+      if(rnd() < 0.42){
+        const w = cell*(1+Math.floor(rnd()*3));
+        const h = cell*(1+Math.floor(rnd()*2));
+        ctx.fillRect(gx, gy, w, h);
+      }
+    }
+  }
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+  tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+  tex.repeat.set(10,10);
+  return tex;
+}
+const cloudTex = buildCloudTexture();
+const cloudLayer = new THREE.Mesh(
+  new THREE.PlaneGeometry(400,400),
+  new THREE.MeshBasicMaterial({map:cloudTex, transparent:true, opacity:0.85, depthWrite:false, side:THREE.DoubleSide, fog:false})
+);
+cloudLayer.rotation.x = -Math.PI/2;
+cloudLayer.position.y = 48;
+cloudLayer.renderOrder = 1;
+scene.add(cloudLayer);
+function updateClouds(dt){
+  cloudLayer.position.x = player.pos.x;
+  cloudLayer.position.z = player.pos.z;
+  cloudTex.offset.x += dt*0.004;
+  cloudTex.offset.y += dt*0.0015;
+}
+
+// ---------------- pixel-art block textures ----------------
+// Every block gets a hand-drawn 16x16 canvas texture (nearest-filtered, no mipmaps) so the
+// world reads as blocky/pixelated like Minecraft instead of flat colors.
+const TX = 16;
+function hex(n){ return '#'+n.toString(16).padStart(6,'0'); }
+function shade(hexColor, amt){
+  const c = new THREE.Color(hexColor);
+  if(amt>=0){ c.lerp(new THREE.Color(0xffffff), amt); } else { c.lerp(new THREE.Color(0x000000), -amt); }
+  return '#'+c.getHexString();
+}
+function newCanvas(){ const c=document.createElement('canvas'); c.width=TX; c.height=TX; return c; }
+// deterministic pseudo-random speckle noise so every block face looks textured, not flat
+function speckle(ctx, base, seed, count, spread){
+  let s = seed;
+  const rnd = ()=>{ s = (s*9301+49297)%233280; return s/233280; };
+  for(let i=0;i<count;i++){
+    const x = Math.floor(rnd()*TX), y = Math.floor(rnd()*TX);
+    const amt = (rnd()-0.5)*spread;
+    ctx.fillStyle = shade(base, amt);
+    ctx.fillRect(x,y,1,1);
+  }
+}
+function texToCanvasTexture(cvs){
+  const t = new THREE.CanvasTexture(cvs);
+  t.magFilter = THREE.NearestFilter;
+  t.minFilter = THREE.NearestFilter;
+  t.generateMipmaps = false;
+  t.needsUpdate = true;
+  return t;
+}
+const drawBlockFace = {
+  grass_top(ctx){ ctx.fillStyle=hex(0x6abe4d); ctx.fillRect(0,0,TX,TX); speckle(ctx,0x6abe4d,11,55,0.28); },
+  grass_side(ctx){
+    ctx.fillStyle=hex(0x8b5a2b); ctx.fillRect(0,0,TX,TX); speckle(ctx,0x8b5a2b,22,40,0.22);
+    ctx.fillStyle=hex(0x6abe4d); ctx.fillRect(0,0,TX,4); speckle(ctx,0x6abe4d,33,20,0.25);
+    for(let x=0;x<TX;x++){ if((x*7+3)%5<2) ctx.fillRect(x,4,1,1); } // ragged grass edge
+  },
+  dirt(ctx){ ctx.fillStyle=hex(0x8b5a2b); ctx.fillRect(0,0,TX,TX); speckle(ctx,0x8b5a2b,44,70,0.24); },
+  stone(ctx){ ctx.fillStyle=hex(0x8d8d8d); ctx.fillRect(0,0,TX,TX); speckle(ctx,0x8d8d8d,55,60,0.16); },
+  wood_side(ctx){
+    ctx.fillStyle=hex(0x6b4423); ctx.fillRect(0,0,TX,TX);
+    for(let x=0;x<TX;x+=3){ ctx.fillStyle=shade(0x6b4423,-0.18); ctx.fillRect(x,0,1,TX); }
+    speckle(ctx,0x6b4423,66,25,0.14);
+  },
+  wood_top(ctx){
+    ctx.fillStyle=hex(0xc19a6b); ctx.fillRect(0,0,TX,TX);
+    ctx.strokeStyle=shade(0xc19a6b,-0.3);
+    for(let r=1;r<8;r+=2){ ctx.beginPath(); ctx.arc(TX/2,TX/2,r,0,Math.PI*2); ctx.stroke(); }
+  },
+  leaves(ctx){ ctx.fillStyle=hex(0x2f6b2f); ctx.fillRect(0,0,TX,TX); speckle(ctx,0x2f6b2f,77,90,0.32); },
+  planks(ctx){
+    ctx.fillStyle=hex(0xc19a6b); ctx.fillRect(0,0,TX,TX);
+    for(let y=0;y<TX;y+=4){ ctx.fillStyle=shade(0xc19a6b,-0.15); ctx.fillRect(0,y,TX,1); }
+    speckle(ctx,0xc19a6b,88,30,0.12);
+  },
+  coal_ore(ctx){
+    ctx.fillStyle=hex(0x8d8d8d); ctx.fillRect(0,0,TX,TX); speckle(ctx,0x8d8d8d,99,40,0.14);
+    ctx.fillStyle='#1c1c1c';
+    [[3,3],[10,4],[6,8],[12,11],[3,12],[9,9]].forEach(([x,y])=>ctx.fillRect(x,y,2,2));
+  },
+  crafting_table_top(ctx){
+    ctx.fillStyle=hex(0xa9702f); ctx.fillRect(0,0,TX,TX);
+    ctx.strokeStyle=shade(0xa9702f,-0.35); ctx.strokeRect(1,1,TX-2,TX-2);
+    ctx.strokeRect(3,3,TX-6,TX-6);
+  },
+  crafting_table_side(ctx){
+    ctx.fillStyle=hex(0xa9702f); ctx.fillRect(0,0,TX,TX);
+    for(let x=0;x<TX;x+=4){ ctx.fillStyle=shade(0xa9702f,-0.18); ctx.fillRect(x,0,1,TX); }
+    ctx.fillStyle=shade(0xa9702f,-0.3); ctx.fillRect(2,2,4,4); ctx.fillRect(10,9,4,4);
+  },
+  sand(ctx){ ctx.fillStyle=hex(0xe0d28c); ctx.fillRect(0,0,TX,TX); speckle(ctx,0xe0d28c,111,60,0.16); },
+  snow(ctx){ ctx.fillStyle=hex(0xf5f9fc); ctx.fillRect(0,0,TX,TX); speckle(ctx,0xf5f9fc,122,50,0.08); },
+  cactus(ctx){
+    ctx.fillStyle=hex(0x3f7d3a); ctx.fillRect(0,0,TX,TX); speckle(ctx,0x3f7d3a,133,50,0.18);
+    ctx.fillStyle=shade(0x3f7d3a,-0.3);
+    for(let y=0;y<TX;y+=1){ ctx.fillRect(3,y,1,1); ctx.fillRect(12,y,1,1); }
+  },
+  water(ctx){
+    ctx.fillStyle=hex(0x3fa1f5); ctx.fillRect(0,0,TX,TX);
+    ctx.fillStyle=shade(0x3fa1f5,0.15);
+    for(let y=1;y<TX;y+=4) for(let x=0;x<TX;x+=2) ctx.fillRect(x,y,1,1);
+  },
+};
+const blockTextures = {
+  grass:   {top:drawBlockFace.grass_top, side:drawBlockFace.grass_side, bottom:drawBlockFace.dirt},
+  wood_log:{top:drawBlockFace.wood_top,  side:drawBlockFace.wood_side,  bottom:drawBlockFace.wood_top},
+  crafting_table:{top:drawBlockFace.crafting_table_top, side:drawBlockFace.crafting_table_side, bottom:drawBlockFace.wood_top},
+  dirt: drawBlockFace.dirt, stone: drawBlockFace.stone, leaves: drawBlockFace.leaves,
+  planks: drawBlockFace.planks, coal_ore: drawBlockFace.coal_ore, sand: drawBlockFace.sand,
+  snow: drawBlockFace.snow, cactus: drawBlockFace.cactus, water: drawBlockFace.water,
+};
+function buildTex(drawFn){
+  const cvs = newCanvas(); drawFn(cvs.getContext('2d')); return {cvs, tex:texToCanvasTexture(cvs)};
+}
+// icon dataURLs, reused later for hotbar/inventory swatches so the UI looks textured too
+const ICONS = {};
+function iconFromDraw(drawFn){
+  const cvs = newCanvas(); drawFn(cvs.getContext('2d')); return cvs.toDataURL();
+}
+
 const boxGeo = new THREE.BoxGeometry(1,1,1);
 const materials = {};
 for(const [name,def] of Object.entries(BLOCKS)){
-  materials[name] = new THREE.MeshStandardMaterial({
-    color: def.color, roughness:0.9,
-    emissive: def.emissive||0x000000, emissiveIntensity: def.emissive?0.9:0
-  });
+  const tset = blockTextures[name];
+  const matOpts = {
+    roughness: def.nonSolid?0.25:0.9,
+    emissive: def.emissive||0x000000, emissiveIntensity: def.emissive?0.9:0,
+    transparent: !!def.transparent, opacity: def.transparent?0.72:1,
+  };
+  if(tset && tset.top){ // multi-face block: build right/left/top/bottom/front/back materials
+    const topT = buildTex(tset.top), sideT = buildTex(tset.side), botT = buildTex(tset.bottom);
+    const topMat = new THREE.MeshStandardMaterial({...matOpts, map:topT.tex});
+    const sideMat = new THREE.MeshStandardMaterial({...matOpts, map:sideT.tex});
+    const botMat = new THREE.MeshStandardMaterial({...matOpts, map:botT.tex});
+    materials[name] = [sideMat, sideMat, topMat, botMat, sideMat, sideMat];
+    ICONS[name] = topT.cvs.toDataURL();
+  } else if(tset){
+    const {cvs, tex} = buildTex(tset);
+    materials[name] = new THREE.MeshStandardMaterial({...matOpts, map:tex});
+    ICONS[name] = cvs.toDataURL();
+  } else {
+    materials[name] = new THREE.MeshStandardMaterial({...matOpts, color: def.color});
+  }
 }
+// small pixel icons for non-block inventory items (sticks, coal, tools, food, wool...)
+function drawItemIcon(ctx, kind, color){
+  ctx.clearRect(0,0,TX,TX);
+  if(kind==='stick'){
+    ctx.fillStyle=hex(color);
+    for(let i=0;i<10;i++) ctx.fillRect(2+i, 13-i, 2, 2);
+  } else if(kind==='nugget'){ // coal, wool, raw meats — a rounded blob
+    ctx.fillStyle=hex(color);
+    ctx.fillRect(4,4,8,8); ctx.fillRect(3,6,10,4); ctx.fillRect(6,3,4,10);
+  } else if(kind==='pickaxe' || kind==='axe' || kind==='shovel' || kind==='sword'){
+    const handle = 0x9c7a4d, head = color;
+    ctx.fillStyle=hex(handle);
+    for(let i=0;i<9;i++) ctx.fillRect(3+i,12-i,2,2); // diagonal handle
+    ctx.fillStyle=hex(head);
+    if(kind==='pickaxe'){ ctx.fillRect(9,1,5,3); ctx.fillRect(11,1,3,6); ctx.fillRect(2,1,5,3); }
+    else if(kind==='axe'){ ctx.fillRect(9,1,6,6); }
+    else if(kind==='shovel'){ ctx.fillRect(10,1,4,5); }
+    else { ctx.fillRect(9,0,3,10); ctx.fillRect(8,9,5,2); } // sword blade + guard
+  }
+}
+ICONS.stick = iconFromDraw(ctx=>drawItemIcon(ctx,'stick',ITEMS.stick.color));
+ICONS.coal = iconFromDraw(ctx=>drawItemIcon(ctx,'nugget',ITEMS.coal.color));
+ICONS.wool = iconFromDraw(ctx=>drawItemIcon(ctx,'nugget',ITEMS.wool.color));
+ICONS.raw_beef = iconFromDraw(ctx=>drawItemIcon(ctx,'nugget',ITEMS.raw_beef.color));
+ICONS.raw_porkchop = iconFromDraw(ctx=>drawItemIcon(ctx,'nugget',ITEMS.raw_porkchop.color));
+ICONS.raw_chicken = iconFromDraw(ctx=>drawItemIcon(ctx,'nugget',ITEMS.raw_chicken.color));
+for(const [name,def] of Object.entries(TOOLS)){
+  ICONS[name] = iconFromDraw(ctx=>drawItemIcon(ctx,def.kind,def.color));
+}
+function getIcon(type){ return ICONS[type] || null; }
+
+// ---------------- sound engine (synthesized — no external audio files needed) ----------------
+const SFX = (function(){
+  let ctx = null;
+  function ensure(){
+    if(!ctx){ ctx = new (window.AudioContext||window.webkitAudioContext)(); }
+    if(ctx.state==='suspended') ctx.resume();
+    return ctx;
+  }
+  function noiseBurst(dur, freq, gainVal, filterType){
+    const c = ensure();
+    const n = Math.floor(c.sampleRate*dur);
+    const buf = c.createBuffer(1, n, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<n;i++) data[i] = (Math.random()*2-1) * (1 - i/n);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const filt = c.createBiquadFilter(); filt.type = filterType||'bandpass'; filt.frequency.value = freq;
+    const g = c.createGain(); g.gain.value = gainVal;
+    src.connect(filt); filt.connect(g); g.connect(c.destination);
+    src.start();
+  }
+  function tone(freq, dur, gainVal, waveType, glide){
+    const c = ensure();
+    const osc = c.createOscillator(); osc.type = waveType||'sine'; osc.frequency.value = freq;
+    if(glide) osc.frequency.exponentialRampToValueAtTime(Math.max(20,freq+glide), c.currentTime+dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(gainVal, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+dur);
+    osc.connect(g); g.connect(c.destination);
+    osc.start(); osc.stop(c.currentTime+dur);
+  }
+  const CATEGORY = {
+    grass:'grass', leaves:'grass', cactus:'grass', dirt:'gravel', sand:'sand', snow:'snow',
+    stone:'stone', coal_ore:'stone', wood_log:'wood', planks:'wood', crafting_table:'wood',
+    torch:'wood', water:'wet',
+  };
+  const FREQ = {grass:220, gravel:160, stone:110, wood:190, sand:260, snow:340, wet:200};
+  function freqFor(type){ return FREQ[CATEGORY[type]] || 180; }
+  return {
+    resume(){ ensure(); },
+    break(type){ const f=freqFor(type); noiseBurst(0.16, f*2, 0.5, 'bandpass'); tone(f, 0.08, 0.16, 'square'); },
+    place(type){ const f=freqFor(type); noiseBurst(0.1, f*1.6, 0.35, 'bandpass'); tone(f*1.3, 0.06, 0.14, 'square'); },
+    step(type){ const f=freqFor(type); noiseBurst(0.07, f*1.8, 0.14, 'bandpass'); },
+    jump(){ tone(300, 0.12, 0.2, 'triangle', 150); },
+    hurt(){ tone(160, 0.18, 0.3, 'sawtooth', -60); noiseBurst(0.15, 300, 0.28, 'bandpass'); },
+    mobHurt(){ tone(220, 0.12, 0.25, 'square', -80); },
+    pop(){ tone(660, 0.08, 0.2, 'sine', 400); },
+    craft(){ tone(500, 0.1, 0.2, 'triangle', 200); tone(700, 0.08, 0.15, 'triangle', 100); },
+    click(){ tone(700, 0.04, 0.12, 'square'); },
+    death(){ tone(150, 0.5, 0.3, 'sawtooth', -100); },
+  };
+})();
 
 // build (or rebuild) the InstancedMeshes for one chunk, from its own block data only
 function buildChunkMeshes(cx,cz){
@@ -507,12 +864,14 @@ function makeMobMesh(type){
   g.add(head);
   const legMat = new THREE.MeshStandardMaterial({color:def.leg});
   const legGeo = new THREE.BoxGeometry(0.12, 0.35, 0.12);
-  for(const lx of [def.size[0]/2-0.09, -(def.size[0]/2-0.09)]){
-    for(const lz of [def.size[2]/2-0.08, -(def.size[2]/2-0.08)]){
-      const leg = new THREE.Mesh(legGeo, legMat);
-      leg.position.set(lx, 0.175, lz);
-      g.add(leg);
-    }
+  const legPositions = (def.legs===2)
+    ? [[0.13,0],[-0.13,0]]
+    : [[def.size[0]/2-0.09, def.size[2]/2-0.08],[def.size[0]/2-0.09, -(def.size[2]/2-0.08)],
+       [-(def.size[0]/2-0.09), def.size[2]/2-0.08],[-(def.size[0]/2-0.09), -(def.size[2]/2-0.08)]];
+  for(const [lx,lz] of legPositions){
+    const leg = new THREE.Mesh(legGeo, legMat);
+    leg.position.set(lx, 0.175, lz);
+    g.add(leg);
   }
   return g;
 }
@@ -524,17 +883,30 @@ function ensureMobsForChunk(cx,cz){
     const roll = hash2(cx*17.7+3, cz*13.3+5);
     if(roll <= 0.55){
       const count = 1+Math.floor(hash2(cx*5.1,cz*9.7)*3);
-      const types = Object.keys(MOB_TYPES);
       for(let i=0;i<count;i++){
         const lx = Math.floor(hash2(cx*31+i*7, cz*11+i*3)*CHUNK_SIZE);
         const lz = Math.floor(hash2(cx*13+i*5, cz*29+i*9)*CHUNK_SIZE);
         const x = cx*CHUNK_SIZE+lx, z = cz*CHUNK_SIZE+lz;
         const h = heightAt(x,z);
         if(getBlock(x,h,z)!=='grass') continue;
-        const type = types[Math.floor(hash2(x*3.3+i,z*7.7+i)*types.length)%types.length];
+        const type = ANIMAL_TYPES[Math.floor(hash2(x*3.3+i,z*7.7+i)*ANIMAL_TYPES.length)%ANIMAL_TYPES.length];
         list.push({id:'m'+cx+'_'+cz+'_'+i, type, pos:[x+0.5,h+1,z+0.5], yaw:Math.random()*Math.PI*2,
           health:MOB_TYPES[type].maxHealth, dead:false, wanderTimer:0, moving:false, fleeUntil:0});
       }
+    }
+    if(villageChunks.has(ck)){
+      const cxCenter = cx*CHUNK_SIZE+8, czCenter = cz*CHUNK_SIZE+8;
+      const villagerCount = 2+Math.floor(hash2(cx*3.3,cz*4.4)*3);
+      for(let i=0;i<villagerCount;i++){
+        const ang = hash2(cx*11+i,cz*17+i)*Math.PI*2, dist = 3+hash2(cx*6+i,cz*8+i)*6;
+        const x = Math.round(cxCenter+Math.cos(ang)*dist), z = Math.round(czCenter+Math.sin(ang)*dist);
+        const h = heightAt(x,z);
+        list.push({id:'v'+cx+'_'+cz+'_'+i, type:'villager', pos:[x+0.5,h+1,z+0.5], yaw:Math.random()*Math.PI*2,
+          health:MOB_TYPES.villager.maxHealth, dead:false, wanderTimer:0, moving:false, fleeUntil:0});
+      }
+      const gh = heightAt(cxCenter, czCenter);
+      list.push({id:'g'+cx+'_'+cz, type:'iron_golem', pos:[cxCenter+0.5,gh+1,czCenter+0.5], yaw:Math.random()*Math.PI*2,
+        health:MOB_TYPES.iron_golem.maxHealth, dead:false, wanderTimer:0, moving:false, fleeUntil:0});
     }
     chunkMobs.set(ck, list);
   }
@@ -621,31 +993,63 @@ function getLoadedBlockMeshes(){
 }
 
 // ---------------- inventory ----------------
+// Minecraft-style split: a 9-slot hotbar (what you actually hold/place with) plus an 18-slot
+// backpack (2 extra rows) for overflow storage, shown together in the inventory screen.
 const HOTBAR_SIZE = 9;
-const inventory = new Array(HOTBAR_SIZE).fill(null); // {type,count}
+const BACKPACK_SIZE = 18;
+const inventory = new Array(HOTBAR_SIZE).fill(null);  // hotbar, {type,count}
+const backpack = new Array(BACKPACK_SIZE).fill(null); // extra storage
 let selectedSlot = 0;
 // starter items
 inventory[0] = {type:'dirt', count:32};
 inventory[1] = {type:'stone', count:32};
 inventory[2] = {type:'wood_log', count:16};
+inventory[3] = {type:'wood_pickaxe', count:1};
+inventory[4] = {type:'wood_axe', count:1};
+inventory[5] = {type:'wood_sword', count:1};
 
+function swatchStyle(type){
+  const icon = getIcon(type);
+  if(icon) return `background-image:url(${icon});background-size:cover;image-rendering:pixelated;`;
+  return `background:${'#'+((SWATCH[type]||0)).toString(16).padStart(6,'0')};`;
+}
 function addItem(type, count){
-  for(const slot of inventory){ if(slot && slot.type===type){ slot.count+=count; renderHotbar(); renderCraftPanel(); return; } }
-  const idx = inventory.findIndex(s=>!s);
-  if(idx>=0){ inventory[idx] = {type,count}; }
+  for(const arr of [inventory, backpack]){
+    for(const slot of arr){ if(slot && slot.type===type){ slot.count+=count; count=0; break; } }
+    if(count<=0) break;
+  }
+  if(count>0){
+    for(const arr of [inventory, backpack]){
+      const idx = arr.findIndex(s=>!s);
+      if(idx>=0){ arr[idx] = {type,count}; count=0; break; }
+    }
+  }
+  if(count>0) showToast('🎒 Inventory full!');
   renderHotbar(); renderCraftPanel();
 }
 function removeItem(type, count){
-  const idx = inventory.findIndex(s=>s && s.type===type && s.count>=count);
-  if(idx<0) return false;
-  inventory[idx].count -= count;
-  if(inventory[idx].count<=0) inventory[idx]=null;
-  renderHotbar(); renderCraftPanel();
-  return true;
+  for(const arr of [inventory, backpack]){
+    const idx = arr.findIndex(s=>s && s.type===type && s.count>=count);
+    if(idx>=0){
+      arr[idx].count -= count;
+      if(arr[idx].count<=0) arr[idx]=null;
+      renderHotbar(); renderCraftPanel();
+      return true;
+    }
+  }
+  return false;
 }
 function hasItem(type,count){
-  const slot = inventory.find(s=>s && s.type===type);
-  return slot && slot.count>=count;
+  for(const arr of [inventory, backpack]){
+    const slot = arr.find(s=>s && s.type===type);
+    if(slot && slot.count>=count) return true;
+  }
+  return false;
+}
+function countOf(type){
+  let n=0;
+  for(const arr of [inventory, backpack]) for(const s of arr) if(s && s.type===type) n+=s.count;
+  return n;
 }
 
 function renderHotbar(){
@@ -657,16 +1061,16 @@ function renderHotbar(){
     if(slot){
       const sw = document.createElement('div');
       sw.className='swatch';
-      sw.style.background = '#'+SWATCH[slot.type].toString(16).padStart(6,'0');
+      sw.style.cssText = swatchStyle(slot.type);
       div.appendChild(sw);
       const cnt = document.createElement('div');
-      cnt.className='count'; cnt.textContent=slot.count;
+      cnt.className='count'; cnt.textContent=slot.count>1?slot.count:'';
       div.appendChild(cnt);
     }
     const num = document.createElement('div');
     num.className='label'; num.textContent = i+1;
     div.appendChild(num);
-    div.addEventListener('click', ()=>{selectedSlot=i; renderHotbar();});
+    div.addEventListener('click', ()=>{selectedSlot=i; renderHotbar(); SFX.click();});
     bar.appendChild(div);
   });
 }
@@ -683,7 +1087,7 @@ window.addEventListener('wheel', e=>{
   renderHotbar();
 });
 
-// ---------------- crafting UI ----------------
+// ---------------- crafting / inventory UI ----------------
 const overlay = document.getElementById('craft-overlay');
 function openCraft(){
   overlay.style.display='flex';
@@ -693,20 +1097,30 @@ function openCraft(){
 function closeCraft(){ overlay.style.display='none'; }
 document.getElementById('craft-close').addEventListener('click', closeCraft);
 
+function makeInvCell(slot, arr, idx, isHotbar){
+  const cell = document.createElement('div');
+  cell.className = 'inv-cell'+(isHotbar?' hotbar-cell':'')+(isHotbar&&idx===selectedSlot?' selected-cell':'');
+  if(slot){
+    const sw=document.createElement('div'); sw.className='swatch';
+    sw.style.cssText = swatchStyle(slot.type);
+    cell.appendChild(sw);
+    const c=document.createElement('div'); c.className='count'; c.textContent=slot.count>1?slot.count:'';
+    cell.appendChild(c);
+  }
+  cell.title = slot ? slot.type.replace(/_/g,' ')+' x'+slot.count : '';
+  cell.addEventListener('click', ()=>{
+    SFX.click();
+    if(isHotbar){ selectedSlot=idx; }
+    else { const tmp = inventory[selectedSlot]; inventory[selectedSlot] = arr[idx]; arr[idx] = tmp; }
+    renderHotbar(); renderCraftPanel();
+  });
+  return cell;
+}
 function renderCraftPanel(){
   const grid = document.getElementById('inv-grid');
   grid.innerHTML='';
-  inventory.forEach(slot=>{
-    const cell = document.createElement('div'); cell.className='inv-cell';
-    if(slot){
-      const sw=document.createElement('div'); sw.className='swatch';
-      sw.style.background='#'+SWATCH[slot.type].toString(16).padStart(6,'0');
-      cell.appendChild(sw);
-      const c=document.createElement('div'); c.className='count'; c.textContent=slot.count;
-      cell.appendChild(c);
-    }
-    grid.appendChild(cell);
-  });
+  backpack.forEach((slot,i)=> grid.appendChild(makeInvCell(slot, backpack, i, false)));
+  inventory.forEach((slot,i)=> grid.appendChild(makeInvCell(slot, inventory, i, true)));
 
   const list = document.getElementById('recipe-list');
   list.innerHTML='';
@@ -715,13 +1129,13 @@ function renderCraftPanel(){
     const need = document.createElement('div'); need.className='r-need';
     let canCraft = true;
     r.need.forEach(([type,count])=>{
-      const have = (inventory.find(s=>s&&s.type===type)||{count:0}).count;
+      const have = countOf(type);
       if(have<count) canCraft=false;
       const span = document.createElement('span');
       const sw = document.createElement('span'); sw.className='r-swatch';
-      sw.style.background='#'+SWATCH[type].toString(16).padStart(6,'0');
+      sw.style.cssText = swatchStyle(type);
       span.appendChild(sw);
-      span.append(`${type.replace('_',' ')} x${count} (have ${have})`);
+      span.append(`${type.replace(/_/g,' ')} x${count} (have ${have})`);
       need.appendChild(span);
     });
     const out = document.createElement('div'); out.className='r-out'; out.textContent='→ '+r.label;
@@ -729,6 +1143,7 @@ function renderCraftPanel(){
     btn.addEventListener('click', ()=>{
       for(const [type,count] of r.need) removeItem(type,count);
       addItem(r.out[0], r.out[1]);
+      SFX.craft();
     });
     row.appendChild(need); row.appendChild(out); row.appendChild(btn);
     list.appendChild(row);
@@ -748,6 +1163,7 @@ const COLORS = [0xff6b6b,0x5ee7c4,0xffd166,0x8a7bff,0x4fc3f7,0xff8a5b,0xa3ff6b,0
 let myColor = COLORS[Math.floor(Math.random()*COLORS.length)];
 let myHeadColor = COLORS[Math.floor(Math.random()*COLORS.length)];
 let myHat = false;
+let gameMode = 'survival'; // 'survival' or 'creative' — set from the connect screen before play starts
 
 // ---------------- character customization ----------------
 const customOverlay = document.getElementById('customize-overlay');
@@ -815,6 +1231,8 @@ const player = {
   pos: new THREE.Vector3(0.5, heightAt(0,0)+3, 0.5),
   yaw: 0, pitch: 0, vy: 0, onGround:false,
 };
+let footstepDist = 0;
+let wasOnGround = true;
 updateChunks(chunkOf(player.pos.x), chunkOf(player.pos.z));
 lastPCX = chunkOf(player.pos.x); lastPCZ = chunkOf(player.pos.z);
 const MAX_HEALTH = 20; // 10 hearts, 2hp per heart
@@ -823,6 +1241,10 @@ let health = MAX_HEALTH;
 function renderHearts(){
   const el = document.getElementById('hearts');
   el.innerHTML = '';
+  if(gameMode==='creative'){
+    el.innerHTML = '<span class="heart" style="font-size:15px;">🪽 Creative (no damage)</span>';
+    return;
+  }
   for(let i=0;i<10;i++){
     const hp = health - i*2;
     const span = document.createElement('span');
@@ -852,12 +1274,13 @@ function respawnPlayer(){
   health = MAX_HEALTH;
   renderHearts();
   showToast('💀 You died — respawning');
+  SFX.death();
   sendState();
 }
 
 const domEl = renderer.domElement;
 const lockHint = document.getElementById('lock-hint');
-lockHint.addEventListener('click', ()=>{ domEl.requestPointerLock(); });
+lockHint.addEventListener('click', ()=>{ domEl.requestPointerLock(); SFX.resume(); });
 document.addEventListener('pointerlockchange', ()=>{
   lockHint.style.display = (document.pointerLockElement===domEl) ? 'none' : 'flex';
 });
@@ -886,7 +1309,13 @@ const meleeRaycaster = new THREE.Raycaster();
 meleeRaycaster.far = 4.2;
 let lastAttack = 0;
 const ATTACK_COOLDOWN = 380;
-const ATTACK_DAMAGE = 2;
+const BASE_ATTACK_DAMAGE = 2;
+// swinging a sword hits harder than bare hands or a mining tool
+function currentAttackDamage(){
+  const slot = inventory[selectedSlot];
+  const t = slot && TOOLS[slot.type];
+  return (t && t.kind==='sword') ? t.dmg : BASE_ATTACK_DAMAGE;
+}
 
 function tryAttack(){
   const meshes = [];
@@ -901,7 +1330,8 @@ function tryAttack(){
   if(hitObj.userData.ownerId){
     if(now - lastAttack < ATTACK_COOLDOWN) return true;
     lastAttack = now;
-    broadcast({type:'hit', target:hitObj.userData.ownerId, from:PLAYER_ID, damage:ATTACK_DAMAGE});
+    broadcast({type:'hit', target:hitObj.userData.ownerId, from:PLAYER_ID, damage:currentAttackDamage()});
+    SFX.mobHurt();
     return true;
   }
   if(hitObj.userData.mobId){
@@ -916,7 +1346,8 @@ function attackMob(id){
   const m = activeMobs.get(id);
   if(!m || m.data.dead) return;
   const d = m.data;
-  d.health -= ATTACK_DAMAGE;
+  d.health -= currentAttackDamage();
+  SFX.mobHurt();
   d.fleeUntil = performance.now() + 2200;
   d.yaw = Math.atan2(d.pos[0]-player.pos.x, d.pos[2]-player.pos.z); // flee away from the player
   d.wanderTimer = 0;
@@ -948,8 +1379,19 @@ function tryBreak(){
   if(!type) return;
   editBlock(x,y,z,null,true);
   sendBlockChange(x,y,z,null);
+  SFX.break(type);
+  // stone/ore need a pickaxe to actually pop off an item, like vanilla — otherwise the
+  // block still breaks, it just doesn't drop anything
+  if(NEEDS_PICKAXE.has(type) && gameMode!=='creative'){
+    const slot = inventory[selectedSlot];
+    const toolDef = slot && TOOLS[slot.type];
+    if(!toolDef || toolDef.kind!=='pickaxe'){
+      showToast('⛏️ Need a pickaxe to collect this');
+      return;
+    }
+  }
   if(type==='coal_ore') addItem('coal',1);
-  else if(type==='leaves'){ /* nothing */ }
+  else if(type==='leaves'){ if(Math.random()<0.15) addItem('stick',1); }
   else addItem(type,1);
 }
 function tryPlace(){
@@ -966,6 +1408,7 @@ function tryPlace(){
   if(nx===px && nz===pz && (ny===py || ny===py-1 || ny===py+1)) return;
   editBlock(nx,ny,nz, slot.type, true);
   sendBlockChange(nx,ny,nz, slot.type);
+  SFX.place(slot.type);
   slot.count--; if(slot.count<=0) inventory[selectedSlot]=null;
   renderHotbar();
 }
@@ -1000,7 +1443,7 @@ function collideMove(pos, dx,dy,dz){
 // ---- mobile input state ----
 let joyVec = {x:0,y:0};
 let touchYawEl = {id:null,lastX:0,lastY:0};
-let touchBreakHeld=false, touchPlaceHeld=false, touchJump=false;
+let touchBreakHeld=false, touchPlaceHeld=false, touchJump=false, touchDown=false;
 
 function updatePlayer(dt){
   // forward/right derived straight from the camera's own facing direction so movement
@@ -1018,15 +1461,39 @@ function updatePlayer(dt){
     const jm = forward.clone().multiplyScalar(-joyVec.y).add(right.clone().multiplyScalar(joyVec.x));
     if(jm.length()>move.length()) move.copy(jm.clampLength(0,1));
   }
-  const spd = (keys['ShiftLeft']||keys['ShiftRight']) ? SPRINT : SPEED;
+  const spd = (gameMode!=='creative' && (keys['ShiftLeft']||keys['ShiftRight'])) ? SPRINT : SPEED;
   if(move.lengthSq()>0){
     collideMove(player.pos, move.x*spd*dt, 0, move.z*spd*dt);
   }
-  if((keys['Space']||touchJump) && player.onGround){ player.vy = JUMP_V; player.onGround=false; }
-  player.vy += GRAVITY*dt;
-  player.onGround=false;
-  collideMove(player.pos, 0, player.vy*dt, 0);
+  if(gameMode==='creative'){
+    const vSpeed = 7;
+    let dy = 0;
+    if(keys['Space']||touchJump) dy += vSpeed*dt;
+    if(keys['ShiftLeft']||keys['ShiftRight']||touchDown) dy -= vSpeed*dt;
+    if(dy!==0) collideMove(player.pos, 0, dy, 0);
+    player.vy = 0;
+    player.onGround = false;
+  } else {
+    if((keys['Space']||touchJump) && player.onGround){ player.vy = JUMP_V; player.onGround=false; SFX.jump(); }
+    player.vy += GRAVITY*dt;
+    player.onGround=false;
+    collideMove(player.pos, 0, player.vy*dt, 0);
+    if(player.onGround && !wasOnGround) SFX.step(getBlock(Math.floor(player.pos.x), Math.floor(player.pos.y-0.1), Math.floor(player.pos.z))||'stone');
+    wasOnGround = player.onGround;
+  }
   if(player.pos.y < -10){ player.pos.set(0.5, heightAt(0,0)+3, 0.5); player.vy=0; }
+
+  // periodic footstep sfx while walking on solid ground
+  if(move.lengthSq()>0 && player.onGround){
+    footstepDist += spd*dt;
+    if(footstepDist > 1.15){
+      footstepDist = 0;
+      const under = getBlock(Math.floor(player.pos.x), Math.floor(player.pos.y-0.1), Math.floor(player.pos.z));
+      SFX.step(under||'grass');
+    }
+  } else if(!player.onGround){
+    footstepDist = 0.6; // step immediately on landing
+  }
 
   const pcx = chunkOf(player.pos.x), pcz = chunkOf(player.pos.z);
   if(pcx!==lastPCX || pcz!==lastPCZ){
@@ -1195,10 +1662,11 @@ function handleIncoming(msg){
     }
     updatePlayersPanel();
   } else if(msg.type==='hit'){
-    if(msg.target===PLAYER_ID){
+    if(msg.target===PLAYER_ID && gameMode!=='creative'){
       health = Math.max(0, health - msg.damage);
       renderHearts();
       showDamageFlash();
+      SFX.hurt();
       if(health<=0) respawnPlayer();
       else sendState();
     }
@@ -1284,6 +1752,11 @@ function finishJoin(roomId){
   document.getElementById('room-overlay').style.display = 'none';
   document.getElementById('room-badge').textContent = roomId.replace('blockcraft-room-','');
   updateConnCount();
+  applyGameModeUI();
+}
+function applyGameModeUI(){
+  document.getElementById('mdown').style.display = gameMode==='creative' ? 'flex' : 'none';
+  renderHearts();
 }
 
 const roomNameEl = document.getElementById('room-name');
@@ -1307,6 +1780,18 @@ modeSingleBtn.addEventListener('click', ()=>setMode('single'));
 modeMultiBtn.addEventListener('click', ()=>setMode('multi'));
 setMode('single');
 
+const gmSurvivalBtn = document.getElementById('gm-survival');
+const gmCreativeBtn = document.getElementById('gm-creative');
+function setGameMode(mode){
+  gameMode = mode;
+  gmSurvivalBtn.classList.toggle('selected', mode==='survival');
+  gmCreativeBtn.classList.toggle('selected', mode==='creative');
+  renderHearts();
+}
+gmSurvivalBtn.addEventListener('click', ()=>setGameMode('survival'));
+gmCreativeBtn.addEventListener('click', ()=>setGameMode('creative'));
+setGameMode('survival');
+
 roomJoinBtn.addEventListener('click', ()=>{
   const nm = roomNameEl.value.trim();
   if(nm) myName = nm.slice(0,16);
@@ -1314,6 +1799,7 @@ roomJoinBtn.addEventListener('click', ()=>{
     document.getElementById('room-overlay').style.display = 'none';
     document.getElementById('room-badge').textContent = 'Singleplayer';
     document.getElementById('net-badge').textContent = 'Offline — solo world';
+    applyGameModeUI();
     return; // netReady stays false: broadcast() is a no-op, no network created at all
   }
   const code = roomCodeEl.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'') || 'PUBLIC';
@@ -1357,7 +1843,7 @@ if(isTouch){
   document.body.classList.add('touch-mode');
   document.getElementById('mobile-controls').style.display='block';
   lockHint.innerHTML = '<div>🧱 <span>Blockcraft</span></div><div>Tap to play</div>';
-  lockHint.addEventListener('touchstart', ()=>{ lockHint.style.display='none'; }, {once:true, passive:true});
+  lockHint.addEventListener('touchstart', ()=>{ lockHint.style.display='none'; SFX.resume(); }, {once:true, passive:true});
 }
 const joyBase = document.getElementById('joystick-base');
 const joyStick = document.getElementById('joystick-stick');
@@ -1402,6 +1888,7 @@ function bindHold(id, onDown, onUp){
   el.addEventListener('touchend', e=>{e.preventDefault(); onUp&&onUp();}, {passive:false});
 }
 bindHold('mjump', ()=>touchJump=true, ()=>touchJump=false);
+bindHold('mdown', ()=>touchDown=true, ()=>touchDown=false);
 bindHold('mbreak', ()=>tryBreak());
 bindHold('mplace', ()=>tryPlace());
 bindHold('minv', ()=>{ if(overlay.style.display==='flex') closeCraft(); else openCraft(); });
@@ -1420,6 +1907,7 @@ function animate(){
   }
   updateRemote();
   updateMobs(dt);
+  updateClouds(dt);
   renderer.render(scene, camera);
 }
 animate();

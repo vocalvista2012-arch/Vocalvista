@@ -815,27 +815,4 @@ font-size:32px;
 .signup-btn:hover{
     background:#5b21b6;
 }
-/* ================= HERO LOGO ================= */
-
-.hero-logo{
-    width: 600px;
-    max-width: 90%;
-    height: auto;
-    display: block;
-    margin: 0 auto 30px;
-    animation: floatLogo 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 25px #7b2cff)
-            drop-shadow(0 0 50px #00d4ff);
-}
-
-@keyframes floatLogo{
-    0%{
-        transform: translateY(0);
-    }
-    50%{
-        transform: translateY(-12px);
-    }
-    100%{
-        transform: translateY(0);
-    }
-}
+/* ================= HERO LOGO =================

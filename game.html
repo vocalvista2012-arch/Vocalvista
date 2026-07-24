@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" href="cvgy-removebg-preview.png" type="image/png">
-  
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Blockcraft — Voxel World Multiplayer</title>
@@ -1811,10 +1809,29 @@ function setupHostConnection(conn){
 }
 function joinAsClient(roomId){
   const peer = new Peer(undefined, {debug:0});
+  let settled = false;
+  const openTimeout = setTimeout(()=>{
+    if(settled) return;
+    settled = true;
+    peer.destroy();
+    document.getElementById('room-status').textContent = 'Could not reach the connection server — check your internet and try again.';
+    roomJoinBtn.disabled = false;
+  }, 15000);
   peer.on('open', ()=>{
+    if(settled) return; // already timed out before the signaling server responded
     const conn = peer.connect(roomId, {reliable:true});
     hostConn = conn;
+    const connectTimeout = setTimeout(()=>{
+      if(settled) return;
+      settled = true;
+      peer.destroy();
+      document.getElementById('room-status').textContent = 'Room not found — check the code, or ask the host to share a fresh one.';
+      roomJoinBtn.disabled = false;
+    }, 10000);
     conn.on('open', ()=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(connectTimeout);
       isHost = false; netReady = true;
       finishJoin(roomId);
     });
@@ -1823,26 +1840,54 @@ function joinAsClient(roomId){
       showToast('⚠️ Lost connection to host — reload to reconnect');
       updateConnCount();
     });
+    conn.on('error', err=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(connectTimeout);
+      peer.destroy();
+      document.getElementById('room-status').textContent = 'Connection to host failed ('+err.type+'). Try again.';
+      roomJoinBtn.disabled = false;
+    });
   });
   peer.on('error', err=>{
+    if(settled) return;
+    settled = true;
+    clearTimeout(openTimeout);
+    peer.destroy();
     document.getElementById('room-status').textContent = 'Could not join room ('+err.type+'). Try again.';
-    document.getElementById('room-join').disabled = false;
+    roomJoinBtn.disabled = false;
   });
 }
 function startNetworking(roomId){
   const hostPeer = new Peer(roomId, {debug:0});
+  let settled = false;
+  const openTimeout = setTimeout(()=>{
+    if(settled) return;
+    settled = true;
+    hostPeer.destroy();
+    document.getElementById('room-status').textContent = 'Could not reach the connection server — check your internet and try again.';
+    roomJoinBtn.disabled = false;
+  }, 15000);
   hostPeer.on('open', ()=>{
+    if(settled) return;
+    settled = true;
+    clearTimeout(openTimeout);
     isHost = true; netReady = true;
     hostPeer.on('connection', conn=>setupHostConnection(conn));
     finishJoin(roomId);
   });
   hostPeer.on('error', err=>{
+    if(settled) return;
     if(err.type==='unavailable-id'){
+      settled = true;
+      clearTimeout(openTimeout);
       hostPeer.destroy();
       joinAsClient(roomId);
     } else {
+      settled = true;
+      clearTimeout(openTimeout);
       document.getElementById('room-status').textContent = 'Connection error ('+err.type+'). Try again.';
-      document.getElementById('room-join').disabled = false;
+      roomJoinBtn.disabled = false;
     }
   });
 }
@@ -1897,6 +1942,10 @@ setGameMode('survival');
 roomJoinBtn.addEventListener('click', ()=>{
   const nm = roomNameEl.value.trim();
   if(nm) myName = nm.slice(0,16);
+  if(typeof Peer === 'undefined'){
+    document.getElementById('room-status').textContent = 'Networking library failed to load — check your connection or ad-blocker, then reload the page.';
+    return;
+  }
   const code = roomCodeEl.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'') || 'PUBLIC';
   document.getElementById('room-status').textContent = 'Connecting…';
   roomJoinBtn.disabled = true;

@@ -832,3 +832,27 @@ font-size:32px;
     transform: translateY(-3px);
     box-shadow: 0 12px 30px rgba(108, 76, 255, 0.5);
 }
+#installBtn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: auto !important;
+    min-width: 190px !important;
+    height: 45px !important;
+    padding: 0 18px !important;
+    margin-left: 10px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6c4cff, #8f5cff) !important;
+    color: white !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(108, 76, 255, 0.35);
+}
+
+#installBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 76, 255, 0.5);
+}

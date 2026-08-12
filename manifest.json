@@ -1,0 +1,23 @@
+{
+  "name": "VocalVista",
+  "short_name": "VocalVista",
+  "description": "VocalVista — Create. Inspire. Design.",
+  "start_url": "/Vocalvista/",
+  "scope": "/Vocalvista/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b14",
+  "theme_color": "#6c4cff",
+  "icons": [
+    {
+      "src": "/Vocalvista/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Vocalvista/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -815,3 +815,20 @@ font-size:32px;
 .signup-btn:hover{
     background:#5b21b6;
 }
+#installBtn {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #6c4cff, #9b5cff);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(108, 76, 255, 0.35);
+    transition: 0.25s ease;
+}
+
+#installBtn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(108, 76, 255, 0.5);
+}

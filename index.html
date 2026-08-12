@@ -58,7 +58,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     <li><a href="login.html">Login</a></li>
     <li><a href="signup.html" class="signup-btn">Sign Up</a></li>
 </ul>
-
+<button id="installBtn" style="display: none;">
+    📱 Install VocalVista
+</button>
 </nav>
 
 <div class="menu-btn">
@@ -458,6 +460,41 @@ if ("serviceWorker" in navigator) {
             .catch(error => console.error("Service Worker error:", error));
     });
 }
-</script>      
+</script>
+    <script>
+let deferredPrompt;
+const installBtn = document.getElementById("installBtn");
+
+window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+
+    if (installBtn) {
+        installBtn.style.display = "inline-block";
+    }
+});
+
+if (installBtn) {
+    installBtn.addEventListener("click", async () => {
+        if (!deferredPrompt) return;
+
+        deferredPrompt.prompt();
+
+        const { outcome } = await deferredPrompt.userChoice;
+
+        console.log("Install result:", outcome);
+
+        deferredPrompt = null;
+        installBtn.style.display = "none";
+    });
+}
+
+window.addEventListener("appinstalled", () => {
+    console.log("VocalVista installed!");
+    if (installBtn) {
+        installBtn.style.display = "none";
+    }
+});
+</script>
 </body>
 </html>

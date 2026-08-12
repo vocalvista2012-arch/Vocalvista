@@ -57,9 +57,11 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     <li><a href="#contact">Contact</a></li>
     <li><a href="login.html">Login</a></li>
     <li><a href="signup.html" class="signup-btn">Sign Up</a>
-        <button id="installBtn" 
-    📱 Install VocalVista
-</button>
+        <button id="installBtn" aria-label="Install VocalVista"></button>
+        <script>
+document.getElementById("installBtn").innerHTML =
+    "📱&nbsp; Install VocalVista";
+</script>
     </li>
 </ul>
 

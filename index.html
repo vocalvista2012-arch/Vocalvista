@@ -450,6 +450,14 @@ onAuthStateChanged(auth,(user)=>{
 
     <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2026/07/20/13/20260720134243-8OTVFHAO.js" defer></script>
-        
+  <script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js")
+            .then(() => console.log("VocalVista Service Worker registered!"))
+            .catch(error => console.error("Service Worker error:", error));
+    });
+}
+</script>      
 </body>
 </html>

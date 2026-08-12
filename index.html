@@ -464,38 +464,36 @@ if ("serviceWorker" in navigator) {
 }
 </script>
     <script>
-let deferredPrompt;
+let deferredPrompt = null;
 const installBtn = document.getElementById("installBtn");
 
 window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredPrompt = event;
-
-    if (installBtn) {
-        installBtn.style.display = "inline-block";
-    }
 });
 
 if (installBtn) {
     installBtn.addEventListener("click", async () => {
-        if (!deferredPrompt) return;
 
-        deferredPrompt.prompt();
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
 
-        const { outcome } = await deferredPrompt.userChoice;
+            const result = await deferredPrompt.userChoice;
+            console.log("Install result:", result.outcome);
 
-        console.log("Install result:", outcome);
-
-        deferredPrompt = null;
-        installBtn.style.display = "none";
+            deferredPrompt = null;
+        } else {
+            alert(
+                "VocalVista is ready to install! 📱\n\n" +
+                "In Chrome, open the ⋮ menu and choose " +
+                "'Install VocalVista' or 'Add to Home screen'."
+            );
+        }
     });
 }
 
 window.addEventListener("appinstalled", () => {
     console.log("VocalVista installed!");
-    if (installBtn) {
-        installBtn.style.display = "none";
-    }
 });
 </script>
 </body>

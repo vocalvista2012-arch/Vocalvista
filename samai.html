@@ -1,1 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>SamAI | Imagine. Create.</title>
+
+<meta name="description"
+content="SamAI - AI Image Generator by VocalVista. Imagine. Create.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="icon" href="icon-192.png" type="image/png">
+
+<style>
+
+/* ================= SAMAI PAGE ================= */
+
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #050816;
+    color: white;
+}
+
+/* NAVBAR */
+
+.samai-nav {
+    height: 75px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6%;
+    background: rgba(10, 12, 30, 0.9);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(15px);
+}
+
+.samai-brand {
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(90deg,#6c4cff,#a855f7,#4cc9ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.back-btn {
+    text-decoration: none;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    transition: 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(108,76,255,0.3);
+}
+
+/* HERO */
+
+.samai-hero {
+    min-height: calc(100vh - 75px);
+    padding: 70px 20px;
+    text-align: center;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+}
+
+.samai-glow {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: #6c4cff;
+    filter: blur(180px);
+    opacity: 0.12;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.samai-title {
+    position: relative;
+    font-size: 60px;
+    font-weight: 800;
+    margin: 20px 0 5px;
+
+    background: linear-gradient(
+        90deg,
+        #6c4cff,
+        #a855f7,
+        #4cc9ff
+    );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.samai-subtitle {
+    position: relative;
+    font-size: 20px;
+    color: #aaaec4;
+    margin-bottom: 45px;
+}
+
+/* GENERATOR */
+
+.generator {
+    position: relative;
+    max-width: 800px;
+    margin: auto;
+
+    padding: 30px;
+
+    border-radius: 25px;
+
+    background: rgba(255,255,255,0.055);
+
+    border: 1px solid rgba(255,255,255,0.12);
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,0.35),
+        0 0 40px rgba(108,76,255,0.12);
+
+    backdrop-filter: blur(20px);
+}
+
+#prompt {
+    width: 100%;
+    min-height: 150px;
+
+    padding: 18px;
+
+    box-sizing: border-box;
+
+    border-radius: 16px;
+
+    border: 1px solid rgba(255,255,255,0.12);
+
+    background: rgba(0,0,0,0.35);
+
+    color: white;
+
+    font-family: inherit;
+    font-size: 16px;
+
+    resize: vertical;
+    outline: none;
+}
+
+#prompt::placeholder {
+    color: #777b91;
+}
+
+#prompt:focus {
+    border-color: #765cff;
+
+    box-shadow:
+        0 0 20px rgba(108,76,255,0.25);
+}
+
+/* OPTIONS */
+
+.options {
+    display: flex;
+    gap: 15px;
+    margin-top: 18px;
+}
+
+.options select {
+    flex: 1;
+
+    padding: 14px;
+
+    border-radius: 12px;
+
+    border: 1px solid rgba(255,255,255,0.12);
+
+    background: #11152b;
+
+    color: white;
+
+    font-family: inherit;
+
+    outline: none;
+}
+
+/* BUTTON */
+
+.generate-btn {
+    width: 100%;
+
+    margin-top: 20px;
+
+    padding: 16px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #6c4cff,
+            #9b5cff
+        );
+
+    color: white;
+
+    font-size: 17px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+
+    box-shadow:
+        0 10px 30px rgba(108,76,255,0.3);
+}
+
+.generate-btn:hover {
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 15px 40px rgba(108,76,255,0.5);
+}
+
+.generate-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+/* RESULT */
+
+#result {
+    margin-top: 30px;
+}
+
+#result img {
+    width: 100%;
+    max-width: 768px;
+
+    border-radius: 18px;
+
+    display: block;
+
+    margin: auto;
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,0.5);
+}
+
+.result-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.result-buttons a,
+.result-buttons button {
+    padding: 12px 20px;
+
+    border: none;
+    border-radius: 10px;
+
+    color: white;
+
+    background: rgba(255,255,255,0.1);
+
+    cursor: pointer;
+
+    text-decoration: none;
+
+    font-family: inherit;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+    .samai-title {
+        font-size: 42px;
+    }
+
+    .samai-subtitle {
+        font-size: 16px;
+    }
+
+    .generator {
+        padding: 20px;
+    }
+
+    .options {
+        flex-direction: column;
+    }
+
+    .samai-nav {
+        padding: 0 20px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+
+<nav class="samai-nav">
+
+    <div class="samai-brand">
+        ✨ SamAI
+    </div>
+
+    <a href="index.html" class="back-btn">
+        ← VocalVista
+    </a>
+
+</nav>
+
+
+<!-- ================= SAMAI ================= -->
+
+<main class="samai-hero">
+
+    <div class="samai-glow"></div>
+
+    <h1 class="samai-title">
+        ✨ SamAI
+    </h1>
+
+    <p class="samai-subtitle">
+        Imagine. Create.
+    </p>
+
+
+    <!-- GENERATOR -->
+
+    <div class="generator">
+
+        <textarea
+            id="prompt"
+            placeholder="Describe the image you want to create..."
+        ></textarea>
+
+
+        <div class="options">
+
+            <select id="style">
+
+                <option value="realistic">
+                    Realistic
+                </option>
+
+                <option value="anime">
+                    Anime
+                </option>
+
+                <option value="cinematic">
+                    Cinematic
+                </option>
+
+                <option value="3d">
+                    3D
+                </option>
+
+                <option value="digital-art">
+                    Digital Art
+                </option>
+
+            </select>
+
+
+            <select id="size">
+
+                <option value="square">
+                    Square
+                </option>
+
+                <option value="portrait">
+                    Portrait
+                </option>
+
+                <option value="landscape">
+                    Landscape
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <button
+            class="generate-btn"
+            id="generateBtn"
+            onclick="generateImage()"
+        >
+            ✨ Generate Image
+        </button>
+
+
+        <div id="result"></div>
+
+    </div>
+
+</main>
+
+
+<script>
+
+/* ================= SAMAI ================= */
+
+async function generateImage() {
+
+    const prompt =
+        document.getElementById("prompt").value.trim();
+
+    const style =
+        document.getElementById("style").value;
+
+    const size =
+        document.getElementById("size").value;
+
+    const button =
+        document.getElementById("generateBtn");
+
+    const result =
+        document.getElementById("result");
+
+
+    if (!prompt) {
+
+        alert("Please describe the image you want to create.");
+
+        return;
+
+    }
+
+
+    button.disabled = true;
+
+    button.innerHTML = "⏳ Creating your image...";
+
+
+    result.innerHTML = `
+        <p style="color:#aaaec4;">
+            ✨ SamAI is creating your image...
+        </p>
+    `;
+
+
+    /*
+       IMAGE API WILL BE CONNECTED HERE.
+
+       Do NOT put your private API key in this file.
+    */
+
+
+    try {
+
+        /*
+        Example:
+
+        const response = await fetch(
+            "YOUR-BACKEND-URL/generate",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    prompt: prompt,
+                    style: style,
+                    size: size
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        result.innerHTML = `
+            <img src="${data.image}" alt="Generated image">
+        `;
+        */
+
+        setTimeout(() => {
+
+            result.innerHTML = `
+                <p style="color:#aaaec4;">
+                    🚧 Image AI connection coming next.
+                </p>
+            `;
+
+        }, 1000);
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        result.innerHTML = `
+            <p style="color:#ff7777;">
+                ❌ Something went wrong.
+            </p>
+        `;
+
+    }
+
+
+    button.disabled = false;
+
+    button.innerHTML =
+        "✨ Generate Image";
+
+}
+
+</script>
+
+</body>
+</html>

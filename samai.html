@@ -21,16 +21,12 @@ rel="stylesheet">
 
 <style>
 
-/* ================= SAMAI PAGE ================= */
-
 body {
     margin: 0;
     font-family: 'Poppins', sans-serif;
     background: #050816;
     color: white;
 }
-
-/* NAVBAR */
 
 .samai-nav {
     height: 75px;
@@ -63,8 +59,6 @@ body {
 .back-btn:hover {
     background: rgba(108,76,255,0.3);
 }
-
-/* HERO */
 
 .samai-hero {
     min-height: calc(100vh - 75px);
@@ -112,19 +106,13 @@ body {
     margin-bottom: 45px;
 }
 
-/* GENERATOR */
-
 .generator {
     position: relative;
     max-width: 800px;
     margin: auto;
-
     padding: 30px;
-
     border-radius: 25px;
-
     background: rgba(255,255,255,0.055);
-
     border: 1px solid rgba(255,255,255,0.12);
 
     box-shadow:
@@ -137,22 +125,14 @@ body {
 #prompt {
     width: 100%;
     min-height: 150px;
-
     padding: 18px;
-
     box-sizing: border-box;
-
     border-radius: 16px;
-
     border: 1px solid rgba(255,255,255,0.12);
-
     background: rgba(0,0,0,0.35);
-
     color: white;
-
     font-family: inherit;
     font-size: 16px;
-
     resize: vertical;
     outline: none;
 }
@@ -168,8 +148,6 @@ body {
         0 0 20px rgba(108,76,255,0.25);
 }
 
-/* OPTIONS */
-
 .options {
     display: flex;
     gap: 15px;
@@ -178,33 +156,20 @@ body {
 
 .options select {
     flex: 1;
-
     padding: 14px;
-
     border-radius: 12px;
-
     border: 1px solid rgba(255,255,255,0.12);
-
     background: #11152b;
-
     color: white;
-
     font-family: inherit;
-
     outline: none;
 }
 
-/* BUTTON */
-
 .generate-btn {
     width: 100%;
-
     margin-top: 20px;
-
     padding: 16px;
-
     border: none;
-
     border-radius: 14px;
 
     background:
@@ -215,12 +180,9 @@ body {
         );
 
     color: white;
-
     font-size: 17px;
     font-weight: 700;
-
     cursor: pointer;
-
     transition: 0.3s;
 
     box-shadow:
@@ -239,8 +201,6 @@ body {
     cursor: wait;
 }
 
-/* RESULT */
-
 #result {
     margin-top: 30px;
 }
@@ -248,11 +208,8 @@ body {
 #result img {
     width: 100%;
     max-width: 768px;
-
     border-radius: 18px;
-
     display: block;
-
     margin: auto;
 
     box-shadow:
@@ -266,25 +223,33 @@ body {
     margin-top: 18px;
 }
 
-.result-buttons a,
-.result-buttons button {
+.result-buttons a {
     padding: 12px 20px;
-
-    border: none;
     border-radius: 10px;
-
     color: white;
-
     background: rgba(255,255,255,0.1);
-
     cursor: pointer;
-
     text-decoration: none;
-
-    font-family: inherit;
 }
 
-/* MOBILE */
+.status {
+    margin-top: 15px;
+    color: #aaaec4;
+}
+
+.error {
+    color: #ff7777;
+}
+
+.success {
+    color: #7dff9b;
+}
+
+.usage {
+    margin-top: 12px;
+    color: #888da5;
+    font-size: 13px;
+}
 
 @media (max-width: 600px) {
 
@@ -315,8 +280,6 @@ body {
 
 <body>
 
-<!-- ================= NAVBAR ================= -->
-
 <nav class="samai-nav">
 
     <div class="samai-brand">
@@ -328,9 +291,6 @@ body {
     </a>
 
 </nav>
-
-
-<!-- ================= SAMAI ================= -->
 
 <main class="samai-hero">
 
@@ -344,16 +304,12 @@ body {
         Imagine. Create.
     </p>
 
-
-    <!-- GENERATOR -->
-
     <div class="generator">
 
         <textarea
             id="prompt"
             placeholder="Describe the image you want to create..."
         ></textarea>
-
 
         <div class="options">
 
@@ -381,7 +337,6 @@ body {
 
             </select>
 
-
             <select id="size">
 
                 <option value="square">
@@ -400,7 +355,6 @@ body {
 
         </div>
 
-
         <button
             class="generate-btn"
             id="generateBtn"
@@ -409,6 +363,9 @@ body {
             ✨ Generate Image
         </button>
 
+        <div id="status" class="status"></div>
+
+        <div id="usage" class="usage"></div>
 
         <div id="result"></div>
 
@@ -419,30 +376,78 @@ body {
 
 <script>
 
-function getSamAIUserId() {
+/* =====================================================
+   SAMAI CLOUDFLARE WORKER
+   ===================================================== */
 
-    let id = localStorage.getItem("samaiUserId");
+const WORKER_URL =
+    "https://samai-image.vocalvista2012.workers.dev/";
 
-    if (!id) {
-        id = "user_" + crypto.randomUUID();
 
-        localStorage.setItem(
-            "samaiUserId",
-            id
-        );
+/* =====================================================
+   AUTOMATIC USER ID
+   ===================================================== */
+
+function createUserId() {
+
+    if (
+        window.crypto &&
+        typeof window.crypto.randomUUID === "function"
+    ) {
+
+        return window.crypto.randomUUID();
+
     }
 
-    return id;
+    return (
+        "samai-" +
+        Date.now().toString(36) +
+        "-" +
+        Math.random()
+            .toString(36)
+            .substring(2, 10)
+    );
+
 }
 
 
+let userId =
+    localStorage.getItem("samai_user_id");
+
+
+if (!userId) {
+
+    userId =
+        createUserId();
+
+    localStorage.setItem(
+        "samai_user_id",
+        userId
+    );
+
+}
+
+
+console.log(
+    "SamAI User ID:",
+    userId
+);
+
+
+/* =====================================================
+   GENERATE IMAGE
+   ===================================================== */
+
 async function generateImage() {
 
-    const prompt =
-        document.getElementById("prompt").value.trim();
+    const promptInput =
+        document.getElementById("prompt");
 
     const style =
         document.getElementById("style").value;
+
+    const size =
+        document.getElementById("size").value;
 
     const button =
         document.getElementById("generateBtn");
@@ -450,98 +455,133 @@ async function generateImage() {
     const result =
         document.getElementById("result");
 
+    const status =
+        document.getElementById("status");
+
+    const usage =
+        document.getElementById("usage");
+
+
+    let prompt =
+        promptInput.value.trim();
+
+
+    /* -------------------------------------------------
+       Check prompt
+       ------------------------------------------------- */
 
     if (!prompt) {
 
-        alert(
-            "Please describe the image you want to create."
-        );
+        status.className =
+            "status error";
+
+        status.textContent =
+            "Please describe the image you want to create.";
 
         return;
+
     }
 
 
-    button.disabled = true;
+    /* -------------------------------------------------
+       Add style
+       ------------------------------------------------- */
+
+    prompt =
+        `${style} style, ${prompt}`;
+
+
+    /* -------------------------------------------------
+       Add size
+       ------------------------------------------------- */
+
+    if (size === "square") {
+
+        prompt +=
+            ", square composition, 1:1 aspect ratio";
+
+    }
+
+    else if (size === "portrait") {
+
+        prompt +=
+            ", portrait composition, vertical format";
+
+    }
+
+    else if (size === "landscape") {
+
+        prompt +=
+            ", landscape composition, horizontal format";
+
+    }
+
+
+    /* -------------------------------------------------
+       Loading
+       ------------------------------------------------- */
+
+    button.disabled =
+        true;
 
     button.innerHTML =
         "⏳ Creating your image...";
 
+    result.innerHTML = "";
 
-    result.innerHTML = `
-        <p style="color:#aaaec4;">
-            ✨ SamAI is creating your image...
-        </p>
-    `;
+    usage.textContent = "";
+
+    status.className =
+        "status";
+
+    status.textContent =
+        "✨ SamAI is creating your image...";
 
 
     try {
 
-        const response = await fetch(
+        /* ---------------------------------------------
+           SEND POST REQUEST
+           --------------------------------------------- */
 
-            "https://samai-image.vocalvista2012.workers.dev",
+        const response =
+            await fetch(
+                WORKER_URL,
+                {
+                    method: "POST",
 
-            {
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                method: "POST",
+                    body: JSON.stringify({
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                        prompt:
+                            prompt,
 
-                body: JSON.stringify({
+                        userId:
+                            userId
 
-                    prompt:
-                        `${prompt}, ${style} style`,
+                    })
 
-                    userId:
-                        getSamAIUserId()
+                }
+            );
 
-                })
 
-            }
-
-        );
-
+        /* ---------------------------------------------
+           Read response
+           --------------------------------------------- */
 
         const data =
             await response.json();
 
 
-        /* DAILY LIMIT */
+        /* ---------------------------------------------
+           Error
+           --------------------------------------------- */
 
-        if (response.status === 429) {
-
-            result.innerHTML = `
-
-                <div style="
-                    padding:25px;
-                    border-radius:18px;
-                    background:rgba(255,255,255,0.06);
-                    border:1px solid rgba(255,255,255,0.1);
-                ">
-
-                    <h2>
-                        🚫 Daily Limit Reached
-                    </h2>
-
-                    <p style="color:#aaaec4;">
-                        You have used all 5 free
-                        image generations today.
-                    </p>
-
-                    <p style="color:#aaaec4;">
-                        Come back tomorrow! ✨
-                    </p>
-
-                </div>
-
-            `;
-
-            return;
-        }
-
-
-        if (!response.ok || data.error) {
+        if (!response.ok) {
 
             throw new Error(
                 data.error ||
@@ -551,13 +591,28 @@ async function generateImage() {
         }
 
 
-        /* GENERATED IMAGE */
+        /* ---------------------------------------------
+           Check image
+           --------------------------------------------- */
+
+        if (!data.image) {
+
+            throw new Error(
+                "The server did not return an image."
+            );
+
+        }
+
+
+        /* ---------------------------------------------
+           Show image
+           --------------------------------------------- */
 
         result.innerHTML = `
 
             <img
                 src="${data.image}"
-                alt="Image generated by SamAI"
+                alt="SamAI generated image"
             >
 
             <div class="result-buttons">
@@ -566,42 +621,71 @@ async function generateImage() {
                     href="${data.image}"
                     download="SamAI-image.jpg"
                 >
-                    ⬇️ Save Image
+                    ⬇ Download Image
                 </a>
 
             </div>
 
-            <p style="
-                color:#aaaec4;
-                margin-top:15px;
-            ">
-                ✨ ${data.remaining} / 5
-                generations remaining today
-            </p>
-
         `;
 
 
-    } catch (error) {
+        /* ---------------------------------------------
+           Usage
+           --------------------------------------------- */
 
-        console.error(error);
+        if (
+            data.remaining !== undefined &&
+            data.limit !== undefined
+        ) {
 
-        result.innerHTML = `
+            usage.textContent =
+                `${data.remaining} of ${data.limit} generations remaining today`;
 
-            <p style="color:#ff7777;">
-                ❌ ${error.message}
-            </p>
+        }
 
-        `;
 
-    } finally {
+        /* ---------------------------------------------
+           Success
+           --------------------------------------------- */
 
-        button.disabled = false;
+        status.className =
+            "status success";
 
-        button.innerHTML =
-            "✨ Generate Image";
+        status.textContent =
+            "✨ Image created successfully!";
+
 
     }
+
+    catch (error) {
+
+        console.error(
+            "SamAI Error:",
+            error
+        );
+
+        status.className =
+            "status error";
+
+        status.textContent =
+            "❌ " +
+            (
+                error.message ||
+                "Something went wrong."
+            );
+
+    }
+
+
+    /* -------------------------------------------------
+       Restore button
+       ------------------------------------------------- */
+
+    button.disabled =
+        false;
+
+    button.innerHTML =
+        "✨ Generate Image";
 
 }
 

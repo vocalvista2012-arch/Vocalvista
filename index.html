@@ -98,8 +98,9 @@ alt="VocalVista">
 <a href="order.html" class="btn btn-order">
     🚀 Order Now
 </a>
-    <a href="samai.html" class="btn samai-btn">
+    <a href="samai.html" class="btn samai-btn" onclick="openSamAI(event)">
     ✨ Try SamAI
+</a>
 </a>
 </a>
 </a>
@@ -538,5 +539,152 @@ window.addEventListener("appinstalled", () => {
     console.log("VocalVista installed!");
 });
 </script>
+    
+ <style>
+/* ================= SAMAI TRANSITION ================= */
+
+.samai-transition {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #6c4cff 0%,
+            #15102f 35%,
+            #050816 75%
+        );
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition: opacity 0.35s ease;
+}
+
+.samai-transition.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.samai-transition-content {
+    text-align: center;
+    transform: scale(0.7);
+    opacity: 0;
+
+    transition:
+        transform 0.6s cubic-bezier(.2,.8,.2,1),
+        opacity 0.4s ease;
+}
+
+.samai-transition.active .samai-transition-content {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.samai-logo-animation {
+    font-size: 70px;
+
+    filter:
+        drop-shadow(0 0 15px #6c4cff)
+        drop-shadow(0 0 40px #9b5cff);
+
+    animation: samaiPulse 1.2s infinite alternate;
+}
+
+.samai-transition h2 {
+    margin: 10px 0 5px;
+
+    font-size: 42px;
+    font-weight: 800;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffffff,
+            #a855f7,
+            #4cc9ff
+        );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.samai-transition p {
+    color: #c4c5d8;
+    font-size: 15px;
+}
+
+.samai-loader {
+    width: 45px;
+    height: 45px;
+
+    margin: 25px auto 0;
+
+    border-radius: 50%;
+
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: #9b5cff;
+    border-right-color: #4cc9ff;
+
+    animation: samaiSpin 0.8s linear infinite;
+}
+
+@keyframes samaiSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes samaiPulse {
+    from {
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(1.12);
+    }
+}
+</style>
+
+<div class="samai-transition" id="samaiTransition">
+
+    <div class="samai-transition-content">
+
+        <div class="samai-logo-animation">
+            ✨
+        </div>
+
+        <h2>SamAI</h2>
+
+        <p>Preparing your creative space...</p>
+
+        <div class="samai-loader"></div>
+
+    </div>
+
+</div>
+
+<script>
+function openSamAI(event) {
+
+    event.preventDefault();
+
+    const transition =
+        document.getElementById("samaiTransition");
+
+    transition.classList.add("active");
+
+    setTimeout(() => {
+
+        window.location.href = "samai.html";
+
+    }, 1200);
+}
+</script>   
 </body>
 </html>

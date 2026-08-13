@@ -302,7 +302,42 @@ id="portfolio">
 </div>
 
 </section>
+<!-- ================= SAMAI ================= -->
 
+<section class="samai reveal" id="samai">
+
+    <h2>✨ SamAI</h2>
+
+    <p class="samai-tagline">
+        Imagine. Create.
+    </p>
+
+    <div class="samai-box">
+
+        <textarea
+            id="samaiPrompt"
+            placeholder="Describe the image you want to create..."
+            rows="4"></textarea>
+
+        <select id="samaiStyle">
+            <option value="realistic">Realistic</option>
+            <option value="anime">Anime</option>
+            <option value="cinematic">Cinematic</option>
+            <option value="3d">3D</option>
+            <option value="digital-art">Digital Art</option>
+        </select>
+
+        <button
+            class="samai-generate"
+            onclick="generateSamAI()">
+            ✨ Generate Image
+        </button>
+
+        <div id="samaiResult"></div>
+
+    </div>
+
+</section>
 <!-- ================= COUPON ================= -->
 
 <section class="coupon reveal"

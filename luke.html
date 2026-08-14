@@ -435,8 +435,9 @@ footer {
 
 </footer>
 
-
 <script>
+
+const WORKER_URL = "https://samai-image.vocalvista2012.workers.dev/";
 
 async function generateVideo() {
 
@@ -455,6 +456,15 @@ async function generateVideo() {
     const button =
         document.getElementById("generateBtn");
 
+    const videoResult =
+        document.getElementById("videoResult");
+
+    const videoPreview =
+        document.getElementById("videoPreview");
+
+    const downloadBtn =
+        document.getElementById("downloadBtn");
+
 
     if (!prompt) {
 
@@ -471,57 +481,91 @@ async function generateVideo() {
         "⏳ Generating...";
 
     status.textContent =
-        "🎬 Luke AI is preparing your video...";
+        "🎬 Luke AI is sending your request...";
+
+    videoResult.style.display = "none";
 
 
     try {
 
-        /*
-         * YOUR CLOUDFLARE WORKER WILL GO HERE.
-         *
-         * Example:
-         *
-         * const response = await fetch(
-         *     "https://YOUR-WORKER.workers.dev/generate-video",
-         *     {
-         *         method: "POST",
-         *         headers: {
-         *             "Content-Type": "application/json"
-         *         },
-         *         body: JSON.stringify({
-         *             prompt: prompt,
-         *             style: style,
-         *             ratio: ratio
-         *         })
-         *     }
-         * );
-         *
-         * const data = await response.json();
-         */
+        // Add style to the prompt
+
+        const finalPrompt =
+            `${style} style video: ${prompt}`;
 
 
-        // TEMPORARY MESSAGE
-        // Remove this when we connect the real API.
+        // Send request to your Cloudflare Worker
 
-        await new Promise(resolve =>
-            setTimeout(resolve, 1500)
-        );
+        const response =
+            await fetch(
+                WORKER_URL,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        type: "video",
+                        prompt: finalPrompt,
+                        ratio: ratio
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "Video request failed."
+            );
+
+        }
+
+
+        if (!data.requestId) {
+
+            throw new Error(
+                "No video request ID received."
+            );
+
+        }
+
+
+        const requestId =
+            data.requestId;
+
 
         status.textContent =
-            "⚠️ Luke AI is ready, but the video API has not been connected yet.";
+            "⏳ Video is generating...";
 
-    }
 
-    catch (error) {
+        // Check the video every 5 seconds
+
+        await checkVideoStatus(
+            requestId,
+            status,
+            videoResult,
+            videoPreview,
+            downloadBtn
+        );
+
+
+    } catch (error) {
 
         console.error(error);
 
         status.textContent =
-            "❌ Something went wrong.";
+            "❌ " + error.message;
 
-    }
-
-    finally {
+    } finally {
 
         button.disabled = false;
 
@@ -532,7 +576,183 @@ async function generateVideo() {
 
 }
 
-</script>
 
+// ======================================
+// CHECK VIDEO STATUS
+// ======================================
+
+async function checkVideoStatus(
+    requestId,
+    status,
+    videoResult,
+    videoPreview,
+    downloadBtn
+) {
+
+    while (true) {
+
+        try {
+
+            const response =
+                await fetch(
+                    `${WORKER_URL}/video-status?requestId=${encodeURIComponent(requestId)}`
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "Could not check video status."
+                );
+
+            }
+
+
+            console.log(
+                "Luke AI status:",
+                data
+            );
+
+
+            // =========================
+            // COMPLETED
+            // =========================
+
+            if (
+                data.status ===
+                "COMPLETED"
+            ) {
+
+                const videoUrl =
+                    getVideoUrl(data.result);
+
+
+                if (!videoUrl) {
+
+                    throw new Error(
+                        "Video was completed, but no video URL was returned."
+                    );
+
+                }
+
+
+                videoPreview.src =
+                    videoUrl;
+
+                downloadBtn.href =
+                    videoUrl;
+
+                videoResult.style.display =
+                    "block";
+
+                status.textContent =
+                    "✅ Your video is ready!";
+
+                return;
+
+            }
+
+
+            // =========================
+            // FAILED
+            // =========================
+
+            if (
+                data.status ===
+                "FAILED"
+            ) {
+
+                throw new Error(
+                    "Video generation failed."
+                );
+
+            }
+
+
+            // =========================
+            // STILL GENERATING
+            // =========================
+
+            status.textContent =
+                "🎬 Luke AI is generating your video...";
+
+
+            // Wait 5 seconds
+
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        5000
+                    )
+            );
+
+        } catch (error) {
+
+            throw error;
+
+        }
+
+    }
+
+}
+
+
+// ======================================
+// FIND VIDEO URL
+// ======================================
+
+function getVideoUrl(result) {
+
+    if (!result) {
+        return null;
+    }
+
+
+    // Common fal.ai format
+
+    if (
+        result.video &&
+        result.video.url
+    ) {
+
+        return result.video.url;
+
+    }
+
+
+    // Alternative format
+
+    if (
+        result.video_url
+    ) {
+
+        return result.video_url;
+
+    }
+
+
+    // Some APIs return a URL directly
+
+    if (
+        typeof result.url ===
+        "string"
+    ) {
+
+        return result.url;
+
+    }
+
+
+    return null;
+
+}
+
+</script>
 </body>
 </html>

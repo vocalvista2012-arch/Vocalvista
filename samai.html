@@ -700,5 +700,28 @@ async function generateImage() {
     <button onclick="openLukeAI()">Try Luke AI</button>
   </div>
 </section>
+ <div id="lukeAI" class="luke-container" style="display:none;">
+  <button onclick="closeLukeAI()">← Back</button>
+
+  <h1>🎬 Luke AI</h1>
+  <p>Turn your ideas into videos.</p>
+
+  <textarea
+    id="videoPrompt"
+    placeholder="Describe the video you want..."
+  ></textarea>
+
+  <button onclick="generateVideo()">
+    ✨ Generate Video
+  </button>
+
+  <div id="videoStatus"></div>
+
+  <video
+    id="videoPreview"
+    controls
+    style="display:none; width:100%;"
+  ></video>
+</div>   
 </body>
 </html>

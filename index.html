@@ -341,6 +341,40 @@ id="portfolio">
     </div>
 
 </section>
+ <!-- ================= LUKE AI ================= -->
+
+<section class="luke-ai reveal" id="luke-ai">
+
+    <h2>🎬 Luke AI</h2>
+
+    <p class="luke-tagline">
+        Turn your ideas into videos.
+    </p>
+
+    <div class="luke-box">
+
+        <textarea
+            id="videoPrompt"
+            placeholder="Describe the video you want to create..."
+            rows="4"></textarea>
+
+        <button
+            class="luke-generate"
+            onclick="generateVideo()">
+            ✨ Generate Video
+        </button>
+
+        <div id="videoStatus"></div>
+
+        <video
+            id="videoPreview"
+            controls
+            style="display:none; width:100%;">
+        </video>
+
+    </div>
+
+</section>   
 <!-- ================= COUPON ================= -->
 
 <section class="coupon reveal"
